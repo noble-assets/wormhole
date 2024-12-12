@@ -1,3 +1,0 @@
-[submodule "e2e/core"]
-	path = e2e/core
-	url = git@github.com:wormhole-foundation/wormhole.git
