@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package wormhole.v1;
+
+import "gogoproto/gogo.proto";
+import "wormhole/v1/wormhole.proto";
+
+option go_package = "github.com/noble-assets/wormhole/types";
+
+message GenesisState {
+  Config config = 1 [(gogoproto.nullable) = false];
+
+  string wormchain_channel = 2;
+
+  map<uint32, GuardianSet> guardian_sets = 3 [(gogoproto.nullable) = false];
+
+  map<string, uint64> sequences = 4;
+
+  repeated bytes vaa_archive = 5;
+}

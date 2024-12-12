@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package wormhole.v1;
+
+import "cosmos/query/v1/query.proto";
+import "gogoproto/gogo.proto";
+import "google/api/annotations.proto";
+import "wormhole/v1/wormhole.proto";
+
+option go_package = "github.com/noble-assets/wormhole/types";
+
+service Query {
+  // Config returns the current module configuration.
+  rpc Config(QueryConfig) returns (QueryConfigResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/wormhole/v1/config";
+  }
+
+  // WormchainChannel returns the current channel opened to Wormchain.
+  rpc WormchainChannel(QueryWormchainChannel) returns (QueryWormchainChannelResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/wormhole/v1/wormchain_channel";
+  }
+
+  // GuardianSets returns all guardian sets registered in the module.
+  rpc GuardianSets(QueryGuardianSets) returns (QueryGuardianSetsResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/wormhole/v1/guardian_sets";
+  }
+  // GuardianSet returns a specific guardian set given an index.
+  rpc GuardianSet(QueryGuardianSet) returns (QueryGuardianSetResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/wormhole/v1/guardian_set/{index}";
+  }
+}
+
+message QueryConfig {}
+
+message QueryConfigResponse {
+  Config config = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryWormchainChannel {}
+
+message QueryWormchainChannelResponse {
+  string wormchain_channel = 1;
+}
+
+message QueryGuardianSets {}
+
+message QueryGuardianSetsResponse {
+  map<uint32, GuardianSet> guardian_sets = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryGuardianSet {
+  string index = 1;
+}
+
+message QueryGuardianSetResponse {
+  GuardianSet guardian_set = 1 [(gogoproto.nullable) = false];
+}

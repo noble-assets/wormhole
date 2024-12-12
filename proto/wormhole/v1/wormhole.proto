@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package wormhole.v1;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/noble-assets/wormhole/types";
+
+// Config is an object used to store the module configuration.
+message Config {
+  uint32 chain_id = 1 [
+    (gogoproto.customtype) = "uint16",
+    (gogoproto.nullable) = false
+  ];
+
+  uint32 guardian_set_index = 2;
+
+  uint64 guardian_set_expiry = 3;
+
+  uint32 gov_chain = 4 [
+    (gogoproto.customtype) = "uint16",
+    (gogoproto.nullable) = false
+  ];
+
+  bytes gov_address = 5;
+}
+
+// GuardianSet is an object used to store a specific guardian set in state.
+message GuardianSet {
+  repeated bytes addresses = 1;
+
+  uint64 expiration_time = 2;
+}

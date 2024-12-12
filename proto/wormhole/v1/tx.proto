@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package wormhole.v1;
+
+import "amino/amino.proto";
+import "cosmos/msg/v1/msg.proto";
+import "cosmos_proto/cosmos.proto";
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/noble-assets/wormhole/types";
+
+service Msg {
+  option (cosmos.msg.v1.service) = true;
+
+  rpc SubmitVAA(MsgSubmitVAA) returns (MsgSubmitVAAResponse);
+  rpc PostMessage(MsgPostMessage) returns (MsgPostMessageResponse);
+}
+
+// MsgSubmitVAA enables anyone to submit Governance VAAs from Wormhole.
+message MsgSubmitVAA {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "wormhole/SubmitVAA";
+
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  bytes vaa = 2;
+}
+
+// MsgSubmitVAAResponse is the response of the SubmitVAA action.
+message MsgSubmitVAAResponse {}
+
+// MsgPostMessage enabled anyone to submit messages to Wormhole.
+message MsgPostMessage {
+  option (cosmos.msg.v1.signer) = "signer";
+  option (amino.name) = "wormhole/PostMessage";
+
+  option (gogoproto.equal) = false;
+  option (gogoproto.goproto_getters) = false;
+
+  string signer = 1 [(cosmos_proto.scalar) = "cosmos.AddressString"];
+  bytes message = 2;
+  uint32 nonce = 3;
+}
+
+// MsgPostMessageResponse is the response of the PostMessage action.
+message MsgPostMessageResponse {}
