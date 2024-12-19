@@ -169,7 +169,7 @@ require (
 	github.com/tendermint/go-amino v0.16.0 // indirect
 	github.com/tidwall/btree v1.7.0 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
-	github.com/wormhole-foundation/wormhole/sdk v0.0.0-20241211155336-e9b080b95f74 // indirect
+	github.com/wormhole-foundation/wormhole/sdk v0.0.0-20241218143724-3797ed082150 // indirect
 	github.com/zondax/hid v0.9.2 // indirect
 	github.com/zondax/ledger-go v0.14.3 // indirect
 	go.etcd.io/bbolt v1.3.10 // indirect

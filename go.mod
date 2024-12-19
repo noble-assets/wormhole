@@ -19,7 +19,7 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/incu6us/goimports-reviser/v3 v3.8.2
-	github.com/wormhole-foundation/wormhole/sdk v0.0.0-20241211155336-e9b080b95f74
+	github.com/wormhole-foundation/wormhole/sdk v0.0.0-20241218143724-3797ed082150
 	google.golang.org/genproto/googleapis/api v0.0.0-20240827150818-7e3bb234dfed
 	google.golang.org/grpc v1.66.0
 	google.golang.org/protobuf v1.34.2

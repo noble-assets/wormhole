@@ -19,8 +19,7 @@ if ! [ -f .duke/data/priv_validator_state.json ]; then
 
   TEMP=.duke/genesis.json
   touch $TEMP && jq '.app_state.staking.params.bond_denom = "ustake"' .duke/config/genesis.json > $TEMP && mv $TEMP .duke/config/genesis.json
-  # Temporarily initialize our Wormhole Chain ID as Sei, to be recognized by the local guardian set.
-  touch $TEMP && jq '.app_state.wormhole.config.chain_id = 32' .duke/config/genesis.json > $TEMP && mv $TEMP .duke/config/genesis.json
+  touch $TEMP && jq '.app_state.wormhole.config.chain_id = 4009' .duke/config/genesis.json > $TEMP && mv $TEMP .duke/config/genesis.json
   touch $TEMP && jq '.app_state.wormhole.config.gov_chain = 1' .duke/config/genesis.json > $TEMP && mv $TEMP .duke/config/genesis.json
   touch $TEMP && jq '.app_state.wormhole.config.gov_address = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ="' .duke/config/genesis.json > $TEMP && mv $TEMP .duke/config/genesis.json
   touch $TEMP && jq '.app_state.wormhole.guardian_sets = {"0":{"addresses":["vvpCnVfNGLf4pNkaLamrSvBdD74="],"expiration_time":0}}' .duke/config/genesis.json > $TEMP && mv $TEMP .duke/config/genesis.json
