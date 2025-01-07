@@ -2,9 +2,20 @@ package keeper
 
 import (
 	"context"
+	"errors"
 
 	"github.com/noble-assets/wormhole/types"
 )
+
+// GetChain is a helper function for retrieving the local Wormhole Chain ID.
+func (k *Keeper) GetChain(ctx context.Context) (uint16, error) {
+	config, err := k.Config.Get(ctx)
+	if err != nil {
+		return 0, errors.New("unable to get config from state")
+	}
+
+	return config.ChainId, nil
+}
 
 // GetGuardianSets is a helper function for retrieving all guardian sets from state.
 func (k *Keeper) GetGuardianSets(ctx context.Context) (map[uint32]types.GuardianSet, error) {
