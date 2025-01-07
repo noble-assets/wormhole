@@ -163,9 +163,12 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 				},
 				{
 					RpcMethod:      "ExecutedVAA",
-					Use:            "executed-vaa [digest]",
+					Use:            "executed-vaa [digest / id]",
 					Short:          "Query if a specific VAA has been executed on Noble",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "input"}},
+					FlagOptions: map[string]*autocliv1.FlagOptions{
+						"input_type": {Name: "input", Shorthand: "i", Usage: "Input format (digest|id) (default \"digest\")", DefaultValue: "digest"},
+					},
 				},
 			},
 		},

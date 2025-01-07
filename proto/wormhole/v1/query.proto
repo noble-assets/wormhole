@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package wormhole.v1;
 
+import "amino/amino.proto";
 import "cosmos/query/v1/query.proto";
 import "gogoproto/gogo.proto";
 import "google/api/annotations.proto";
@@ -68,8 +69,9 @@ message QueryGuardianSetResponse {
 
 message QueryExecutedVAA {
   string input = 1;
+  string input_type = 2;
 }
 
 message QueryExecutedVAAResponse {
-  bool executed = 1;
+  bool executed = 1 [(amino.dont_omitempty) = true];
 }
