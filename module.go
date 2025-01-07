@@ -161,6 +161,12 @@ func (AppModule) AutoCLIOptions() *autocliv1.ModuleOptions {
 					Example:        "  nobled query wormhole guardian-set current\n  nobled query wormhole guardian-set 0",
 					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "index"}},
 				},
+				{
+					RpcMethod:      "ExecutedVAA",
+					Use:            "executed-vaa [digest]",
+					Short:          "Query if a specific VAA has been executed on Noble",
+					PositionalArgs: []*autocliv1.PositionalArgDescriptor{{ProtoField: "input"}},
+				},
 			},
 		},
 	}

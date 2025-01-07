@@ -16,5 +16,5 @@ message GenesisState {
 
   map<string, uint64> sequences = 4;
 
-  repeated bytes vaa_archive = 5;
+  map<string, string> vaa_archive = 5;
 }

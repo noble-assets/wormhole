@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
@@ -86,4 +87,21 @@ func (k queryServer) GuardianSet(ctx context.Context, req *types.QueryGuardianSe
 	}
 
 	return &types.QueryGuardianSetResponse{GuardianSet: guardianSet}, nil
+}
+
+func (k queryServer) ExecutedVAA(ctx context.Context, req *types.QueryExecutedVAA) (*types.QueryExecutedVAAResponse, error) {
+	if req == nil {
+		return nil, types.ErrInvalidRequest
+	}
+
+	// TODO: k.VAAArchive.Indexes.ByID.MatchExact(ctx, req.Input)
+
+	digest, err := hex.DecodeString(req.Input)
+	if err != nil {
+		return nil, fmt.Errorf("unable to decode digest %s", req.Input)
+	}
+
+	executed, _ := k.VAAArchive.Has(ctx, digest)
+
+	return &types.QueryExecutedVAAResponse{Executed: executed}, nil
 }

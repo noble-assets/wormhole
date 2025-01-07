@@ -23,6 +23,7 @@ const (
 	Query_WormchainChannel_FullMethodName = "/wormhole.v1.Query/WormchainChannel"
 	Query_GuardianSets_FullMethodName     = "/wormhole.v1.Query/GuardianSets"
 	Query_GuardianSet_FullMethodName      = "/wormhole.v1.Query/GuardianSet"
+	Query_ExecutedVAA_FullMethodName      = "/wormhole.v1.Query/ExecutedVAA"
 )
 
 // QueryClient is the client API for Query service.
@@ -37,6 +38,8 @@ type QueryClient interface {
 	GuardianSets(ctx context.Context, in *QueryGuardianSets, opts ...grpc.CallOption) (*QueryGuardianSetsResponse, error)
 	// GuardianSet returns a specific guardian set given an index.
 	GuardianSet(ctx context.Context, in *QueryGuardianSet, opts ...grpc.CallOption) (*QueryGuardianSetResponse, error)
+	// ExecutedVAA returns if a specific VAA has been executed on Noble.
+	ExecutedVAA(ctx context.Context, in *QueryExecutedVAA, opts ...grpc.CallOption) (*QueryExecutedVAAResponse, error)
 }
 
 type queryClient struct {
@@ -87,6 +90,16 @@ func (c *queryClient) GuardianSet(ctx context.Context, in *QueryGuardianSet, opt
 	return out, nil
 }
 
+func (c *queryClient) ExecutedVAA(ctx context.Context, in *QueryExecutedVAA, opts ...grpc.CallOption) (*QueryExecutedVAAResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(QueryExecutedVAAResponse)
+	err := c.cc.Invoke(ctx, Query_ExecutedVAA_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // QueryServer is the server API for Query service.
 // All implementations must embed UnimplementedQueryServer
 // for forward compatibility.
@@ -99,6 +112,8 @@ type QueryServer interface {
 	GuardianSets(context.Context, *QueryGuardianSets) (*QueryGuardianSetsResponse, error)
 	// GuardianSet returns a specific guardian set given an index.
 	GuardianSet(context.Context, *QueryGuardianSet) (*QueryGuardianSetResponse, error)
+	// ExecutedVAA returns if a specific VAA has been executed on Noble.
+	ExecutedVAA(context.Context, *QueryExecutedVAA) (*QueryExecutedVAAResponse, error)
 	mustEmbedUnimplementedQueryServer()
 }
 
@@ -120,6 +135,9 @@ func (UnimplementedQueryServer) GuardianSets(context.Context, *QueryGuardianSets
 }
 func (UnimplementedQueryServer) GuardianSet(context.Context, *QueryGuardianSet) (*QueryGuardianSetResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GuardianSet not implemented")
+}
+func (UnimplementedQueryServer) ExecutedVAA(context.Context, *QueryExecutedVAA) (*QueryExecutedVAAResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExecutedVAA not implemented")
 }
 func (UnimplementedQueryServer) mustEmbedUnimplementedQueryServer() {}
 func (UnimplementedQueryServer) testEmbeddedByValue()               {}
@@ -214,6 +232,24 @@ func _Query_GuardianSet_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Query_ExecutedVAA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryExecutedVAA)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QueryServer).ExecutedVAA(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Query_ExecutedVAA_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QueryServer).ExecutedVAA(ctx, req.(*QueryExecutedVAA))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Query_ServiceDesc is the grpc.ServiceDesc for Query service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -236,6 +272,10 @@ var Query_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GuardianSet",
 			Handler:    _Query_GuardianSet_Handler,
+		},
+		{
+			MethodName: "ExecutedVAA",
+			Handler:    _Query_ExecutedVAA_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

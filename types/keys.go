@@ -8,4 +8,5 @@ var (
 	GuardianSetPrefix   = []byte("guardian_set")
 	SequencePrefix      = []byte("sequence")
 	VAAArchivePrefix    = []byte("vaa_archive")
+	VAAByIDPrefix       = []byte("vaa_by_id")
 )

@@ -32,6 +32,12 @@ service Query {
     option (cosmos.query.v1.module_query_safe) = true;
     option (google.api.http).get = "/wormhole/v1/guardian_set/{index}";
   }
+
+  // ExecutedVAA returns if a specific VAA has been executed on Noble.
+  rpc ExecutedVAA(QueryExecutedVAA) returns (QueryExecutedVAAResponse) {
+    option (cosmos.query.v1.module_query_safe) = true;
+    option (google.api.http).get = "/wormhole/v1/executed_vaa/{input}";
+  }
 }
 
 message QueryConfig {}
@@ -58,4 +64,12 @@ message QueryGuardianSet {
 
 message QueryGuardianSetResponse {
   GuardianSet guardian_set = 1 [(gogoproto.nullable) = false];
+}
+
+message QueryExecutedVAA {
+  string input = 1;
+}
+
+message QueryExecutedVAAResponse {
+  bool executed = 1;
 }

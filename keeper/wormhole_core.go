@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"cosmossdk.io/collections"
 	"cosmossdk.io/core/event"
 	"cosmossdk.io/errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -43,7 +44,7 @@ func (k *Keeper) ParseAndVerifyVAA(ctx context.Context, bz []byte) (*vaautils.VA
 		return nil, fmt.Errorf("invalid guardian set signatures")
 	}
 
-	if err := k.VAAArchive.Set(ctx, hash, true); err != nil {
+	if err := k.VAAArchive.Set(ctx, hash, collections.Join(vaa.MessageID(), true)); err != nil {
 		return nil, errors.Wrap(err, "failed to set vaa in state")
 	}
 

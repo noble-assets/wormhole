@@ -1,6 +1,9 @@
 package wormhole
 
 import (
+	"encoding/hex"
+
+	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -36,8 +39,13 @@ func InitGenesis(ctx sdk.Context, k *keeper.Keeper, cdc address.Codec, genesis t
 		}
 	}
 
-	for _, hash := range genesis.VaaArchive {
-		if err := k.VAAArchive.Set(ctx, hash, true); err != nil {
+	for hash, id := range genesis.VaaArchive {
+		bz, err := hex.DecodeString(hash)
+		if err != nil {
+			panic(err)
+		}
+
+		if err := k.VAAArchive.Set(ctx, bz, collections.Join(id, true)); err != nil {
 			panic(err)
 		}
 	}

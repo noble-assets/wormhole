@@ -186,50 +186,86 @@ func (x *_GenesisState_4_map) IsValid() bool {
 	return x.m != nil
 }
 
-var _ protoreflect.List = (*_GenesisState_5_list)(nil)
+var _ protoreflect.Map = (*_GenesisState_5_map)(nil)
 
-type _GenesisState_5_list struct {
-	list *[][]byte
+type _GenesisState_5_map struct {
+	m *map[string]string
 }
 
-func (x *_GenesisState_5_list) Len() int {
-	if x.list == nil {
+func (x *_GenesisState_5_map) Len() int {
+	if x.m == nil {
 		return 0
 	}
-	return len(*x.list)
+	return len(*x.m)
 }
 
-func (x *_GenesisState_5_list) Get(i int) protoreflect.Value {
-	return protoreflect.ValueOfBytes((*x.list)[i])
+func (x *_GenesisState_5_map) Range(f func(protoreflect.MapKey, protoreflect.Value) bool) {
+	if x.m == nil {
+		return
+	}
+	for k, v := range *x.m {
+		mapKey := (protoreflect.MapKey)(protoreflect.ValueOfString(k))
+		mapValue := protoreflect.ValueOfString(v)
+		if !f(mapKey, mapValue) {
+			break
+		}
+	}
 }
 
-func (x *_GenesisState_5_list) Set(i int, value protoreflect.Value) {
-	valueUnwrapped := value.Bytes()
+func (x *_GenesisState_5_map) Has(key protoreflect.MapKey) bool {
+	if x.m == nil {
+		return false
+	}
+	keyUnwrapped := key.String()
+	concreteValue := keyUnwrapped
+	_, ok := (*x.m)[concreteValue]
+	return ok
+}
+
+func (x *_GenesisState_5_map) Clear(key protoreflect.MapKey) {
+	if x.m == nil {
+		return
+	}
+	keyUnwrapped := key.String()
+	concreteKey := keyUnwrapped
+	delete(*x.m, concreteKey)
+}
+
+func (x *_GenesisState_5_map) Get(key protoreflect.MapKey) protoreflect.Value {
+	if x.m == nil {
+		return protoreflect.Value{}
+	}
+	keyUnwrapped := key.String()
+	concreteKey := keyUnwrapped
+	v, ok := (*x.m)[concreteKey]
+	if !ok {
+		return protoreflect.Value{}
+	}
+	return protoreflect.ValueOfString(v)
+}
+
+func (x *_GenesisState_5_map) Set(key protoreflect.MapKey, value protoreflect.Value) {
+	if !key.IsValid() || !value.IsValid() {
+		panic("invalid key or value provided")
+	}
+	keyUnwrapped := key.String()
+	concreteKey := keyUnwrapped
+	valueUnwrapped := value.String()
 	concreteValue := valueUnwrapped
-	(*x.list)[i] = concreteValue
+	(*x.m)[concreteKey] = concreteValue
 }
 
-func (x *_GenesisState_5_list) Append(value protoreflect.Value) {
-	valueUnwrapped := value.Bytes()
-	concreteValue := valueUnwrapped
-	*x.list = append(*x.list, concreteValue)
+func (x *_GenesisState_5_map) Mutable(key protoreflect.MapKey) protoreflect.Value {
+	panic("should not call Mutable on protoreflect.Map whose value is not of type protoreflect.Message")
 }
 
-func (x *_GenesisState_5_list) AppendMutable() protoreflect.Value {
-	panic(fmt.Errorf("AppendMutable can not be called on message GenesisState at list field VaaArchive as it is not of Message kind"))
+func (x *_GenesisState_5_map) NewValue() protoreflect.Value {
+	v := ""
+	return protoreflect.ValueOfString(v)
 }
 
-func (x *_GenesisState_5_list) Truncate(n int) {
-	*x.list = (*x.list)[:n]
-}
-
-func (x *_GenesisState_5_list) NewElement() protoreflect.Value {
-	var v []byte
-	return protoreflect.ValueOfBytes(v)
-}
-
-func (x *_GenesisState_5_list) IsValid() bool {
-	return x.list != nil
+func (x *_GenesisState_5_map) IsValid() bool {
+	return x.m != nil
 }
 
 var (
@@ -341,7 +377,7 @@ func (x *fastReflection_GenesisState) Range(f func(protoreflect.FieldDescriptor,
 		}
 	}
 	if len(x.VaaArchive) != 0 {
-		value := protoreflect.ValueOfList(&_GenesisState_5_list{list: &x.VaaArchive})
+		value := protoreflect.ValueOfMap(&_GenesisState_5_map{m: &x.VaaArchive})
 		if !f(fd_GenesisState_vaa_archive, value) {
 			return
 		}
@@ -433,10 +469,10 @@ func (x *fastReflection_GenesisState) Get(descriptor protoreflect.FieldDescripto
 		return protoreflect.ValueOfMap(mapValue)
 	case "wormhole.v1.GenesisState.vaa_archive":
 		if len(x.VaaArchive) == 0 {
-			return protoreflect.ValueOfList(&_GenesisState_5_list{})
+			return protoreflect.ValueOfMap(&_GenesisState_5_map{})
 		}
-		listValue := &_GenesisState_5_list{list: &x.VaaArchive}
-		return protoreflect.ValueOfList(listValue)
+		mapValue := &_GenesisState_5_map{m: &x.VaaArchive}
+		return protoreflect.ValueOfMap(mapValue)
 	default:
 		if descriptor.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: wormhole.v1.GenesisState"))
@@ -470,9 +506,9 @@ func (x *fastReflection_GenesisState) Set(fd protoreflect.FieldDescriptor, value
 		cmv := mv.(*_GenesisState_4_map)
 		x.Sequences = *cmv.m
 	case "wormhole.v1.GenesisState.vaa_archive":
-		lv := value.List()
-		clv := lv.(*_GenesisState_5_list)
-		x.VaaArchive = *clv.list
+		mv := value.Map()
+		cmv := mv.(*_GenesisState_5_map)
+		x.VaaArchive = *cmv.m
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: wormhole.v1.GenesisState"))
@@ -512,10 +548,10 @@ func (x *fastReflection_GenesisState) Mutable(fd protoreflect.FieldDescriptor) p
 		return protoreflect.ValueOfMap(value)
 	case "wormhole.v1.GenesisState.vaa_archive":
 		if x.VaaArchive == nil {
-			x.VaaArchive = [][]byte{}
+			x.VaaArchive = make(map[string]string)
 		}
-		value := &_GenesisState_5_list{list: &x.VaaArchive}
-		return protoreflect.ValueOfList(value)
+		value := &_GenesisState_5_map{m: &x.VaaArchive}
+		return protoreflect.ValueOfMap(value)
 	case "wormhole.v1.GenesisState.wormchain_channel":
 		panic(fmt.Errorf("field wormchain_channel of message wormhole.v1.GenesisState is not mutable"))
 	default:
@@ -543,8 +579,8 @@ func (x *fastReflection_GenesisState) NewField(fd protoreflect.FieldDescriptor) 
 		m := make(map[string]uint64)
 		return protoreflect.ValueOfMap(&_GenesisState_4_map{m: &m})
 	case "wormhole.v1.GenesisState.vaa_archive":
-		list := [][]byte{}
-		return protoreflect.ValueOfList(&_GenesisState_5_list{list: &list})
+		m := make(map[string]string)
+		return protoreflect.ValueOfMap(&_GenesisState_5_map{m: &m})
 	default:
 		if fd.IsExtension() {
 			panic(fmt.Errorf("proto3 declared messages do not support extensions: wormhole.v1.GenesisState"))
@@ -672,9 +708,24 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			}
 		}
 		if len(x.VaaArchive) > 0 {
-			for _, b := range x.VaaArchive {
-				l = len(b)
-				n += 1 + l + runtime.Sov(uint64(l))
+			SiZeMaP := func(k string, v string) {
+				mapEntrySize := 1 + len(k) + runtime.Sov(uint64(len(k))) + 1 + len(v) + runtime.Sov(uint64(len(v)))
+				n += mapEntrySize + 1 + runtime.Sov(uint64(mapEntrySize))
+			}
+			if options.Deterministic {
+				sortme := make([]string, 0, len(x.VaaArchive))
+				for k := range x.VaaArchive {
+					sortme = append(sortme, k)
+				}
+				sort.Strings(sortme)
+				for _, k := range sortme {
+					v := x.VaaArchive[k]
+					SiZeMaP(k, v)
+				}
+			} else {
+				for k, v := range x.VaaArchive {
+					SiZeMaP(k, v)
+				}
 			}
 		}
 		if x.unknownFields != nil {
@@ -707,12 +758,46 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], x.unknownFields)
 		}
 		if len(x.VaaArchive) > 0 {
-			for iNdEx := len(x.VaaArchive) - 1; iNdEx >= 0; iNdEx-- {
-				i -= len(x.VaaArchive[iNdEx])
-				copy(dAtA[i:], x.VaaArchive[iNdEx])
-				i = runtime.EncodeVarint(dAtA, i, uint64(len(x.VaaArchive[iNdEx])))
+			MaRsHaLmAp := func(k string, v string) (protoiface.MarshalOutput, error) {
+				baseI := i
+				i -= len(v)
+				copy(dAtA[i:], v)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(v)))
+				i--
+				dAtA[i] = 0x12
+				i -= len(k)
+				copy(dAtA[i:], k)
+				i = runtime.EncodeVarint(dAtA, i, uint64(len(k)))
+				i--
+				dAtA[i] = 0xa
+				i = runtime.EncodeVarint(dAtA, i, uint64(baseI-i))
 				i--
 				dAtA[i] = 0x2a
+				return protoiface.MarshalOutput{}, nil
+			}
+			if options.Deterministic {
+				keysForVaaArchive := make([]string, 0, len(x.VaaArchive))
+				for k := range x.VaaArchive {
+					keysForVaaArchive = append(keysForVaaArchive, string(k))
+				}
+				sort.Slice(keysForVaaArchive, func(i, j int) bool {
+					return keysForVaaArchive[i] < keysForVaaArchive[j]
+				})
+				for iNdEx := len(keysForVaaArchive) - 1; iNdEx >= 0; iNdEx-- {
+					v := x.VaaArchive[string(keysForVaaArchive[iNdEx])]
+					out, err := MaRsHaLmAp(keysForVaaArchive[iNdEx], v)
+					if err != nil {
+						return out, err
+					}
+				}
+			} else {
+				for k := range x.VaaArchive {
+					v := x.VaaArchive[k]
+					out, err := MaRsHaLmAp(k, v)
+					if err != nil {
+						return out, err
+					}
+				}
 			}
 		}
 		if len(x.Sequences) > 0 {
@@ -1174,7 +1259,7 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field VaaArchive", wireType)
 				}
-				var byteLen int
+				var msglen int
 				for shift := uint(0); ; shift += 7 {
 					if shift >= 64 {
 						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
@@ -1184,23 +1269,118 @@ func (x *fastReflection_GenesisState) ProtoMethods() *protoiface.Methods {
 					}
 					b := dAtA[iNdEx]
 					iNdEx++
-					byteLen |= int(b&0x7F) << shift
+					msglen |= int(b&0x7F) << shift
 					if b < 0x80 {
 						break
 					}
 				}
-				if byteLen < 0 {
+				if msglen < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
-				postIndex := iNdEx + byteLen
+				postIndex := iNdEx + msglen
 				if postIndex < 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
 				}
 				if postIndex > l {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
 				}
-				x.VaaArchive = append(x.VaaArchive, make([]byte, postIndex-iNdEx))
-				copy(x.VaaArchive[len(x.VaaArchive)-1], dAtA[iNdEx:postIndex])
+				if x.VaaArchive == nil {
+					x.VaaArchive = make(map[string]string)
+				}
+				var mapkey string
+				var mapvalue string
+				for iNdEx < postIndex {
+					entryPreIndex := iNdEx
+					var wire uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+						}
+						if iNdEx >= l {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						wire |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					fieldNum := int32(wire >> 3)
+					if fieldNum == 1 {
+						var stringLenmapkey uint64
+						for shift := uint(0); ; shift += 7 {
+							if shift >= 64 {
+								return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+							}
+							if iNdEx >= l {
+								return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+							}
+							b := dAtA[iNdEx]
+							iNdEx++
+							stringLenmapkey |= uint64(b&0x7F) << shift
+							if b < 0x80 {
+								break
+							}
+						}
+						intStringLenmapkey := int(stringLenmapkey)
+						if intStringLenmapkey < 0 {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+						}
+						postStringIndexmapkey := iNdEx + intStringLenmapkey
+						if postStringIndexmapkey < 0 {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+						}
+						if postStringIndexmapkey > l {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+						}
+						mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+						iNdEx = postStringIndexmapkey
+					} else if fieldNum == 2 {
+						var stringLenmapvalue uint64
+						for shift := uint(0); ; shift += 7 {
+							if shift >= 64 {
+								return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
+							}
+							if iNdEx >= l {
+								return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+							}
+							b := dAtA[iNdEx]
+							iNdEx++
+							stringLenmapvalue |= uint64(b&0x7F) << shift
+							if b < 0x80 {
+								break
+							}
+						}
+						intStringLenmapvalue := int(stringLenmapvalue)
+						if intStringLenmapvalue < 0 {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+						}
+						postStringIndexmapvalue := iNdEx + intStringLenmapvalue
+						if postStringIndexmapvalue < 0 {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+						}
+						if postStringIndexmapvalue > l {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+						}
+						mapvalue = string(dAtA[iNdEx:postStringIndexmapvalue])
+						iNdEx = postStringIndexmapvalue
+					} else {
+						iNdEx = entryPreIndex
+						skippy, err := runtime.Skip(dAtA[iNdEx:])
+						if err != nil {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, err
+						}
+						if (skippy < 0) || (iNdEx+skippy) < 0 {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrInvalidLength
+						}
+						if (iNdEx + skippy) > postIndex {
+							return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
+						}
+						iNdEx += skippy
+					}
+				}
+				x.VaaArchive[mapkey] = mapvalue
 				iNdEx = postIndex
 			default:
 				iNdEx = preIndex
@@ -1259,7 +1439,7 @@ type GenesisState struct {
 	WormchainChannel string                  `protobuf:"bytes,2,opt,name=wormchain_channel,json=wormchainChannel,proto3" json:"wormchain_channel,omitempty"`
 	GuardianSets     map[uint32]*GuardianSet `protobuf:"bytes,3,rep,name=guardian_sets,json=guardianSets,proto3" json:"guardian_sets,omitempty" protobuf_key:"varint,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	Sequences        map[string]uint64       `protobuf:"bytes,4,rep,name=sequences,proto3" json:"sequences,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"varint,2,opt,name=value,proto3"`
-	VaaArchive       [][]byte                `protobuf:"bytes,5,rep,name=vaa_archive,json=vaaArchive,proto3" json:"vaa_archive,omitempty"`
+	VaaArchive       map[string]string       `protobuf:"bytes,5,rep,name=vaa_archive,json=vaaArchive,proto3" json:"vaa_archive,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *GenesisState) Reset() {
@@ -1310,7 +1490,7 @@ func (x *GenesisState) GetSequences() map[string]uint64 {
 	return nil
 }
 
-func (x *GenesisState) GetVaaArchive() [][]byte {
+func (x *GenesisState) GetVaaArchive() map[string]string {
 	if x != nil {
 		return x.VaaArchive
 	}
@@ -1325,7 +1505,7 @@ var file_wormhole_v1_genesis_proto_rawDesc = []byte{
 	0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a, 0x1a,
 	0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x77, 0x6f, 0x72, 0x6d,
-	0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xc8, 0x03, 0x0a, 0x0c, 0x47,
+	0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0xb2, 0x04, 0x0a, 0x0c, 0x47,
 	0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x12, 0x31, 0x0a, 0x06, 0x63,
 	0x6f, 0x6e, 0x66, 0x69, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x13, 0x2e, 0x77, 0x6f,
 	0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67,
@@ -1342,30 +1522,37 @@ var file_wormhole_v1_genesis_proto_rawDesc = []byte{
 	0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c,
 	0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74,
 	0x65, 0x2e, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79,
-	0x52, 0x09, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x73, 0x12, 0x1f, 0x0a, 0x0b, 0x76,
-	0x61, 0x61, 0x5f, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0c,
-	0x52, 0x0a, 0x76, 0x61, 0x61, 0x41, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x1a, 0x59, 0x0a, 0x11,
-	0x47, 0x75, 0x61, 0x72, 0x64, 0x69, 0x61, 0x6e, 0x53, 0x65, 0x74, 0x73, 0x45, 0x6e, 0x74, 0x72,
-	0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x03,
-	0x6b, 0x65, 0x79, 0x12, 0x2e, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x0b, 0x32, 0x18, 0x2e, 0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x76, 0x31,
-	0x2e, 0x47, 0x75, 0x61, 0x72, 0x64, 0x69, 0x61, 0x6e, 0x53, 0x65, 0x74, 0x52, 0x05, 0x76, 0x61,
-	0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x1a, 0x3c, 0x0a, 0x0e, 0x53, 0x65, 0x71, 0x75, 0x65,
-	0x6e, 0x63, 0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79,
-	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76,
-	0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75,
-	0x65, 0x3a, 0x02, 0x38, 0x01, 0x42, 0xa9, 0x01, 0x0a, 0x0f, 0x63, 0x6f, 0x6d, 0x2e, 0x77, 0x6f,
-	0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73,
-	0x69, 0x73, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x3b, 0x67, 0x69, 0x74, 0x68, 0x75,
-	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6e, 0x6f, 0x62, 0x6c, 0x65, 0x2d, 0x61, 0x73, 0x73, 0x65,
-	0x74, 0x73, 0x2f, 0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f,
-	0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x77, 0x6f, 0x72, 0x6d,
-	0x68, 0x6f, 0x6c, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x57, 0x58, 0x58, 0xaa, 0x02, 0x0b, 0x57,
-	0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0b, 0x57, 0x6f, 0x72,
-	0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x17, 0x57, 0x6f, 0x72, 0x6d, 0x68,
-	0x6f, 0x6c, 0x65, 0x5c, 0x56, 0x31, 0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61,
-	0x74, 0x61, 0xea, 0x02, 0x0c, 0x57, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x3a, 0x3a, 0x56,
-	0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x52, 0x09, 0x73, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x73, 0x12, 0x4a, 0x0a, 0x0b, 0x76,
+	0x61, 0x61, 0x5f, 0x61, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x18, 0x05, 0x20, 0x03, 0x28, 0x0b,
+	0x32, 0x29, 0x2e, 0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47,
+	0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x53, 0x74, 0x61, 0x74, 0x65, 0x2e, 0x56, 0x61, 0x61, 0x41,
+	0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x0a, 0x76, 0x61, 0x61,
+	0x41, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x1a, 0x59, 0x0a, 0x11, 0x47, 0x75, 0x61, 0x72, 0x64,
+	0x69, 0x61, 0x6e, 0x53, 0x65, 0x74, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03,
+	0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x2e,
+	0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e,
+	0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x47, 0x75, 0x61, 0x72,
+	0x64, 0x69, 0x61, 0x6e, 0x53, 0x65, 0x74, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02,
+	0x38, 0x01, 0x1a, 0x3c, 0x0a, 0x0e, 0x53, 0x65, 0x71, 0x75, 0x65, 0x6e, 0x63, 0x65, 0x73, 0x45,
+	0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01,
+	0x1a, 0x3d, 0x0a, 0x0f, 0x56, 0x61, 0x61, 0x41, 0x72, 0x63, 0x68, 0x69, 0x76, 0x65, 0x45, 0x6e,
+	0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09,
+	0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a, 0x02, 0x38, 0x01, 0x42,
+	0xa9, 0x01, 0x0a, 0x0f, 0x63, 0x6f, 0x6d, 0x2e, 0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65,
+	0x2e, 0x76, 0x31, 0x42, 0x0c, 0x47, 0x65, 0x6e, 0x65, 0x73, 0x69, 0x73, 0x50, 0x72, 0x6f, 0x74,
+	0x6f, 0x50, 0x01, 0x5a, 0x3b, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f,
+	0x6e, 0x6f, 0x62, 0x6c, 0x65, 0x2d, 0x61, 0x73, 0x73, 0x65, 0x74, 0x73, 0x2f, 0x77, 0x6f, 0x72,
+	0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f,
+	0x6c, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x77, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x76, 0x31,
+	0xa2, 0x02, 0x03, 0x57, 0x58, 0x58, 0xaa, 0x02, 0x0b, 0x57, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c,
+	0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x0b, 0x57, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x5c,
+	0x56, 0x31, 0xe2, 0x02, 0x17, 0x57, 0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x5c, 0x56, 0x31,
+	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x0c, 0x57,
+	0x6f, 0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -1380,24 +1567,26 @@ func file_wormhole_v1_genesis_proto_rawDescGZIP() []byte {
 	return file_wormhole_v1_genesis_proto_rawDescData
 }
 
-var file_wormhole_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_wormhole_v1_genesis_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_wormhole_v1_genesis_proto_goTypes = []interface{}{
 	(*GenesisState)(nil), // 0: wormhole.v1.GenesisState
 	nil,                  // 1: wormhole.v1.GenesisState.GuardianSetsEntry
 	nil,                  // 2: wormhole.v1.GenesisState.SequencesEntry
-	(*Config)(nil),       // 3: wormhole.v1.Config
-	(*GuardianSet)(nil),  // 4: wormhole.v1.GuardianSet
+	nil,                  // 3: wormhole.v1.GenesisState.VaaArchiveEntry
+	(*Config)(nil),       // 4: wormhole.v1.Config
+	(*GuardianSet)(nil),  // 5: wormhole.v1.GuardianSet
 }
 var file_wormhole_v1_genesis_proto_depIdxs = []int32{
-	3, // 0: wormhole.v1.GenesisState.config:type_name -> wormhole.v1.Config
+	4, // 0: wormhole.v1.GenesisState.config:type_name -> wormhole.v1.Config
 	1, // 1: wormhole.v1.GenesisState.guardian_sets:type_name -> wormhole.v1.GenesisState.GuardianSetsEntry
 	2, // 2: wormhole.v1.GenesisState.sequences:type_name -> wormhole.v1.GenesisState.SequencesEntry
-	4, // 3: wormhole.v1.GenesisState.GuardianSetsEntry.value:type_name -> wormhole.v1.GuardianSet
-	4, // [4:4] is the sub-list for method output_type
-	4, // [4:4] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	3, // 3: wormhole.v1.GenesisState.vaa_archive:type_name -> wormhole.v1.GenesisState.VaaArchiveEntry
+	5, // 4: wormhole.v1.GenesisState.GuardianSetsEntry.value:type_name -> wormhole.v1.GuardianSet
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_wormhole_v1_genesis_proto_init() }
@@ -1426,7 +1615,7 @@ func file_wormhole_v1_genesis_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_wormhole_v1_genesis_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
