@@ -94,7 +94,8 @@ func (k queryServer) ExecutedVAA(ctx context.Context, req *types.QueryExecutedVA
 		return nil, types.ErrInvalidRequest
 	}
 
-	if req.InputType == "" || req.InputType == "digest" {
+	switch req.InputType {
+	case "", "digest":
 		digest, err := hex.DecodeString(req.Input)
 		if err != nil {
 			return nil, fmt.Errorf("unable to decode digest %s", req.Input)
@@ -103,11 +104,11 @@ func (k queryServer) ExecutedVAA(ctx context.Context, req *types.QueryExecutedVA
 		executed, _ := k.VAAArchive.Has(ctx, digest)
 
 		return &types.QueryExecutedVAAResponse{Executed: executed}, nil
-	} else if req.InputType == "id" {
+	case "id":
 		digest, _ := k.VAAArchive.Indexes.ByID.MatchExact(ctx, req.Input)
 
 		return &types.QueryExecutedVAAResponse{Executed: digest != nil}, nil
-	} else {
-		return nil, types.ErrInvalidRequest
+	default:
+		return nil, fmt.Errorf("invalid input type '%s', expected 'digest' or 'id'", req.InputType)
 	}
 }
