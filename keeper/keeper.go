@@ -1,6 +1,9 @@
 package keeper
 
 import (
+	"context"
+	"encoding/json"
+
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/event"
@@ -10,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
 	"github.com/cosmos/ibc-go/v8/modules/core/24-host"
 
 	"github.com/noble-assets/wormhole/types"
@@ -93,4 +97,33 @@ func (k *Keeper) BindPort(ctx sdk.Context) error {
 // ClaimCapability allows the module to claim port or channel capabilities.
 func (k *Keeper) ClaimCapability(ctx sdk.Context, cap *capabilitytypes.Capability, name string) error {
 	return k.scopedKeeper.ClaimCapability(ctx, cap, name)
+}
+
+// PostMessage allows the module to send messages from Noble via Wormhole.
+func (k *Keeper) PostMessage(ctx context.Context, signer string, message []byte, nonce uint32) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	info := k.headerService.GetHeaderInfo(ctx)
+	channel, err := k.WormchainChannel.Get(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get wormchain channel from state")
+	}
+
+	data, err := k.GetPacketData(ctx, message, nonce, signer)
+	if err != nil {
+		return err
+	}
+	bz, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	capability, _ := k.scopedKeeper.GetCapability(sdkCtx, host.ChannelCapabilityPath(types.Port, channel))
+	_, err = k.ics4Wrapper.SendPacket(
+		sdkCtx, capability, types.Port, channel,
+		clienttypes.ZeroHeight(),
+		uint64(info.Time.Add(types.PacketLifetime).UnixNano()),
+		bz,
+	)
+
+	return err
 }
