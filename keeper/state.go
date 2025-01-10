@@ -2,7 +2,11 @@ package keeper
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+
+	"cosmossdk.io/collections"
+	"cosmossdk.io/collections/indexes"
 
 	"github.com/noble-assets/wormhole/types"
 )
@@ -51,16 +55,38 @@ func (k *Keeper) GetSequences(ctx context.Context) (map[string]uint64, error) {
 
 // GetVAAArchive is a helper function for retrieving all executed VAAs from
 // state. Note that this should only be used when exporting genesis.
-func (k *Keeper) GetVAAArchive(ctx context.Context) ([][]byte, error) {
-	var vaaArchive [][]byte
+func (k *Keeper) GetVAAArchive(ctx context.Context) (map[string]string, error) {
+	vaaArchive := make(map[string]string)
 
-	err := k.VAAArchive.Walk(ctx, nil, func(hash []byte, executed bool) (stop bool, err error) {
-		if executed {
-			vaaArchive = append(vaaArchive, hash)
+	err := k.VAAArchive.Walk(ctx, nil, func(hash []byte, value collections.Pair[string, bool]) (stop bool, err error) {
+		if value.K2() {
+			vaaArchive[hex.EncodeToString(hash)] = value.K1()
 		}
 
 		return false, nil
 	})
 
 	return vaaArchive, err
+}
+
+//
+
+type VAAArchiveIndexes struct {
+	ByID *indexes.Unique[string, []byte, collections.Pair[string, bool]]
+}
+
+func (i VAAArchiveIndexes) IndexesList() []collections.Index[[]byte, collections.Pair[string, bool]] {
+	return []collections.Index[[]byte, collections.Pair[string, bool]]{i.ByID}
+}
+
+func NewVAAArchiveIndexes(builder *collections.SchemaBuilder) VAAArchiveIndexes {
+	return VAAArchiveIndexes{
+		ByID: indexes.NewUnique(
+			builder, types.VAAByIDPrefix, "vaa_by_id",
+			collections.StringKey, collections.BytesKey,
+			func(_ []byte, value collections.Pair[string, bool]) (string, error) {
+				return value.K1(), nil
+			},
+		),
+	}
 }

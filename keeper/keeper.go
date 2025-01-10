@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"cosmossdk.io/collections"
+	collcodec "cosmossdk.io/collections/codec"
 	"cosmossdk.io/core/address"
 	"cosmossdk.io/core/event"
 	"cosmossdk.io/core/header"
@@ -29,7 +30,7 @@ type Keeper struct {
 	WormchainChannel collections.Item[string]
 	GuardianSets     collections.Map[uint32, types.GuardianSet]
 	Sequences        collections.Map[[]byte, uint64]
-	VAAArchive       collections.Map[[]byte, bool]
+	VAAArchive       *collections.IndexedMap[[]byte, collections.Pair[string, bool], VAAArchiveIndexes]
 
 	ics4Wrapper  types.ICS4Wrapper
 	portKeeper   types.PortKeeper
@@ -57,7 +58,14 @@ func NewKeeper(
 		WormchainChannel: collections.NewItem(builder, types.WormchainChannelKey, "wormchain_channel", collections.StringValue),
 		GuardianSets:     collections.NewMap(builder, types.GuardianSetPrefix, "guardian_sets", collections.Uint32Key, codec.CollValue[types.GuardianSet](cdc)),
 		Sequences:        collections.NewMap(builder, types.SequencePrefix, "sequences", collections.BytesKey, collections.Uint64Value),
-		VAAArchive:       collections.NewMap(builder, types.VAAArchivePrefix, "vaa_archive", collections.BytesKey, collections.BoolValue),
+		VAAArchive: collections.NewIndexedMap(
+			builder, types.VAAArchivePrefix, "vaa_archive",
+			collections.BytesKey,
+			collcodec.KeyToValueCodec(collections.PairKeyCodec(
+				collections.StringKey, collections.BoolKey,
+			)),
+			NewVAAArchiveIndexes(builder),
+		),
 
 		ics4Wrapper:  ics4Wrapper,
 		portKeeper:   portKeeper,
