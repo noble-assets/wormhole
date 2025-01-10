@@ -27,8 +27,8 @@ format:
 ###                                Protobuf                                 ###
 ###############################################################################
 
-BUF_VERSION=1.42
-BUILDER_VERSION=0.15.1
+BUF_VERSION=1.49
+BUILDER_VERSION=0.15.2
 
 proto-all: proto-format proto-lint proto-gen
 
