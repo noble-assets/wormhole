@@ -37,7 +37,7 @@ service Query {
   // ExecutedVAA returns if a specific VAA has been executed on Noble.
   rpc ExecutedVAA(QueryExecutedVAA) returns (QueryExecutedVAAResponse) {
     option (cosmos.query.v1.module_query_safe) = true;
-    option (google.api.http).get = "/wormhole/v1/executed_vaa/{input}";
+    option (google.api.http).get = "/wormhole/v1/executed_vaa/{input=**}";
   }
 }
 

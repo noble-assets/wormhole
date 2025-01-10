@@ -487,7 +487,7 @@ var (
 
 	pattern_Query_GuardianSet_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"wormhole", "v1", "guardian_set", "index"}, "", runtime.AssumeColonVerbOpt(false)))
 
-	pattern_Query_ExecutedVAA_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"wormhole", "v1", "executed_vaa", "input"}, "", runtime.AssumeColonVerbOpt(false)))
+	pattern_Query_ExecutedVAA_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 3, 0, 4, 1, 5, 3}, []string{"wormhole", "v1", "executed_vaa", "input"}, "", runtime.AssumeColonVerbOpt(false)))
 )
 
 var (
