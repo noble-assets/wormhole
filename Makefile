@@ -1,5 +1,5 @@
-.PHONY: proto-format proto-lint proto-gen format build
-all: proto-all format build
+.PHONY: proto-format proto-lint proto-gen license format lint build
+all: proto-all format lint build
 
 ###############################################################################
 ###                                  Build                                  ###
@@ -16,6 +16,11 @@ build:
 
 gofumpt_cmd=mvdan.cc/gofumpt
 goimports_reviser_cmd=github.com/incu6us/goimports-reviser/v3
+golangci_lint_cmd=github.com/golangci/golangci-lint/cmd/golangci-lint
+
+FILES := $(shell find . -name "*.go" -not -path "./e2e/*" -not -path "./simapp/*" -not -name "*.pb.go" -not -name "*.pb.gw.go" -not -name "*.pulsar.go")
+license:
+	@go-license --config .github/license.yml $(FILES)
 
 format:
 	@echo "🤖 Running formatter..."
@@ -23,12 +28,17 @@ format:
 	@go run $(goimports_reviser_cmd) keeper/* &> /dev/null
 	@echo "✅ Completed formatting!"
 
+lint:
+	@echo "🤖 Running linter..."
+	@go run $(golangci_lint_cmd) run --timeout=10m
+	@echo "✅ Completed linting!"
+
 ###############################################################################
 ###                                Protobuf                                 ###
 ###############################################################################
 
-BUF_VERSION=1.49
-BUILDER_VERSION=0.15.2
+BUF_VERSION=1.50
+BUILDER_VERSION=0.15.3
 
 proto-all: proto-format proto-lint proto-gen
 
