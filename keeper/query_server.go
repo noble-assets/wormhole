@@ -2,10 +2,11 @@ package keeper
 
 import (
 	"context"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"strconv"
+
+	"github.com/ethereum/go-ethereum/common"
 
 	"github.com/noble-assets/wormhole/types"
 )
@@ -96,11 +97,7 @@ func (k queryServer) ExecutedVAA(ctx context.Context, req *types.QueryExecutedVA
 
 	switch req.InputType {
 	case "", "digest":
-		digest, err := hex.DecodeString(req.Input)
-		if err != nil {
-			return nil, fmt.Errorf("unable to decode digest %s", req.Input)
-		}
-
+		digest := common.FromHex(req.Input)
 		executed, _ := k.VAAArchive.Has(ctx, digest)
 
 		return &types.QueryExecutedVAAResponse{Executed: executed}, nil
