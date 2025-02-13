@@ -64,6 +64,10 @@ func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*typ
 		return nil, err
 	}
 
+	if !(pkt.Chain == config.ChainId || pkt.Chain == 0) {
+		return nil, errors.Wrap(types.ErrInvalidGovernanceVAA, "packet not meant for this chain")
+	}
+
 	switch pkt.Module {
 	case "Core":
 		err = k.HandleCoreGovernancePacket(ctx, pkt)
