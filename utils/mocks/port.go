@@ -27,11 +27,11 @@ import (
 	"github.com/noble-assets/wormhole/types"
 )
 
-var _ types.PortKeeper = PortalKeeper{}
+var _ types.PortKeeper = PortKeeper{}
 
-type PortalKeeper struct{}
+type PortKeeper struct{}
 
 // BindPort implements types.PortKeeper.
-func (p PortalKeeper) BindPort(ctx sdk.Context, port string) *capabilitytypes.Capability {
+func (p PortKeeper) BindPort(ctx sdk.Context, port string) *capabilitytypes.Capability {
 	panic("unimplemented")
 }
