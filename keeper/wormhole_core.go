@@ -35,6 +35,10 @@ import (
 	"github.com/noble-assets/wormhole/types"
 )
 
+// GuardianSetExpiry defines how long a guardian set should remain active for
+// after being replaced, before then expiring. Currently, 24 hours.
+const GuardianSetExpiry = 86400
+
 func (k *Keeper) ParseAndVerifyVAA(ctx context.Context, bz []byte) (*vaautils.VAA, error) {
 	vaa, err := vaautils.Unmarshal(bz)
 	if err != nil {
@@ -107,7 +111,7 @@ func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.Gover
 			return errors.Wrap(err, "failed to get old guardian set from state")
 		}
 		blockTime := uint64(k.headerService.GetHeaderInfo(ctx).Time.Unix())
-		oldGuardianSet.ExpirationTime = blockTime + 86400
+		oldGuardianSet.ExpirationTime = blockTime + GuardianSetExpiry
 
 		err = k.GuardianSets.Set(ctx, oldIndex, oldGuardianSet)
 		if err != nil {
