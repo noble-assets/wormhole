@@ -30,29 +30,34 @@ import (
 	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 )
 
-func testSigner() (*ecdsa.PrivateKey, common.Address) {
-	// generate private key
-	privateKey, _ := ecdsa.GenerateKey(ethcrypto.S256(), rand.Reader)
-
-	return privateKey, ethcrypto.PubkeyToAddress(privateKey.PublicKey)
+type Guardian struct {
+	PrivKey *ecdsa.PrivateKey
+	Address common.Address
 }
 
-func CreateVAA(t *testing.T, payload string, sequence uint64) *vaautils.VAA {
-	g1Pk, g1Addr := testSigner()
-	g2Pk, g2Addr := testSigner()
-	g3Pk, g3Addr := testSigner()
-	_, g4Addr := testSigner()
+func GuardianSigner() Guardian {
+	// generate private key
+	privateKey, _ := ecdsa.GenerateKey(ethcrypto.S256(), rand.Reader)
+	addr := ethcrypto.PubkeyToAddress(privateKey.PublicKey)
 
-	guardianAddresses := []common.Address{g1Addr, g2Addr, g3Addr, g4Addr}
+	return Guardian{
+		PrivKey: privateKey,
+		Address: addr,
+	}
+}
 
+func CreateVAA(t *testing.T, guardians []Guardian, payload string, sequence uint64) *vaautils.VAA {
 	vaa := vaautils.VAA{
 		Payload:  []byte(payload),
 		Sequence: sequence,
+		Version:  vaautils.SupportedVAAVersion,
 	}
 
-	vaa.AddSignature(g1Pk, 0)
-	vaa.AddSignature(g2Pk, 1)
-	vaa.AddSignature(g3Pk, 2)
+	var guardianAddresses []common.Address
+	for idx, guardian := range guardians {
+		vaa.AddSignature(guardian.PrivKey, uint8(idx))
+		guardianAddresses = append(guardianAddresses, guardian.Address)
+	}
 
 	// verify signatures
 	err := vaa.Verify(guardianAddresses)
