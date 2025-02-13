@@ -60,8 +60,8 @@ func (k *Keeper) ParseAndVerifyVAA(ctx context.Context, bz []byte) (*vaautils.VA
 	for _, address := range guardianSet.Addresses {
 		addresses = append(addresses, common.BytesToAddress(address))
 	}
-	if !vaa.VerifySignatures(addresses) {
-		return nil, fmt.Errorf("invalid guardian set signatures")
+	if err := vaa.Verify(addresses); err != nil {
+		return nil, errors.Wrap(err, "failed to verify vaa")
 	}
 
 	if err := k.VAAArchive.Set(ctx, hash, collections.Join(vaa.MessageID(), true)); err != nil {
