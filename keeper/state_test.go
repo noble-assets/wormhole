@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/noble-assets/wormhole/types"
+	"github.com/noble-assets/wormhole/utils"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
@@ -57,4 +58,45 @@ func TestGetChain(t *testing.T) {
 	// ASSERT
 	require.NoError(t, err, "expected no error when config is set")
 	require.Equal(t, config.ChainId, chain, "expected different chain id")
+}
+
+func TestGetGuardianSets(t *testing.T) {
+	// ARRANGE: Create environment
+	ctx, k := mocks.WormholeKeeper(t)
+
+	// ACT
+	guardianSets, err := k.GetGuardianSets(ctx)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the set is empty")
+	require.Empty(t, guardianSets, "expected empty map")
+
+	// ARRANGE: Add guardian sets
+	setOne := types.GuardianSet{
+		Addresses: [][]byte{
+			utils.GenerateRandomBytes(20),
+			utils.GenerateRandomBytes(20),
+		},
+		ExpirationTime: uint64(0),
+	}
+	setTwo := types.GuardianSet{
+		Addresses: [][]byte{
+			utils.GenerateRandomBytes(20),
+		},
+		ExpirationTime: uint64(1),
+	}
+
+	err = k.GuardianSets.Set(ctx, 1, setOne)
+	require.NoError(t, err, "expected no error setting the guardian")
+	err = k.GuardianSets.Set(ctx, 2, setTwo)
+	require.NoError(t, err, "expected no error setting the guardian")
+
+	// ACT
+	guardianSets, err = k.GetGuardianSets(ctx)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the set is empty")
+	require.Len(t, guardianSets, 2, "expected two sets")
+	require.Equal(t, setOne, guardianSets[1], "expected different values in first set")
+	require.Equal(t, setTwo, guardianSets[2], "expected different values in second set")
 }
