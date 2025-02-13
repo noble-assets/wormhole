@@ -56,6 +56,7 @@ func (k *Keeper) ParseAndVerifyVAA(ctx context.Context, bz []byte) (*vaautils.VA
 	}
 
 	blockTime := uint64(k.headerService.GetHeaderInfo(ctx).Time.Unix())
+	// TODO: is zero a no expiration?
 	if guardianSet.ExpirationTime != 0 && guardianSet.ExpirationTime < blockTime {
 		return nil, fmt.Errorf("guardian set %d is expired", vaa.GuardianSetIndex)
 	}
