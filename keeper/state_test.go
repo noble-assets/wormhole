@@ -21,8 +21,10 @@
 package keeper_test
 
 import (
+	"encoding/hex"
 	"testing"
 
+	"cosmossdk.io/collections"
 	"github.com/stretchr/testify/require"
 
 	"github.com/noble-assets/wormhole/types"
@@ -141,4 +143,47 @@ func TestGetSequences(t *testing.T) {
 	require.Len(t, sequences, 1, "expected the valid address to be in the map")
 
 	// TODO: how to make address codec fail?
+}
+
+func TestGetVAAArchive(t *testing.T) {
+	// ARRANGE: Create environment
+	ctx, k := mocks.WormholeKeeper(t)
+
+	// ACT
+	archive, err := k.GetVAAArchive(ctx)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when no vaa are in the archive")
+	require.Empty(t, archive, "expected empty map")
+
+	// ARRANGE: Add a vaa with a true second part of the pair
+	vaa1 := utils.CreateVAA(t, "first test vaa", 1)
+	hash1 := vaa1.SigningDigest().Bytes()
+	err = k.VAAArchive.Set(ctx, hash1, collections.Join(vaa1.MessageID(), true))
+	require.NoError(t, err, "expected no error setting the vaa in the archive")
+
+	// ACT
+	archive, err = k.GetVAAArchive(ctx)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the archive is not empty")
+	require.Len(t, archive, 1, "expected one vaa in the archive")
+	val, found := archive[hex.EncodeToString(hash1)]
+	require.True(t, found, "expected vaa to be in the archive")
+	require.Equal(t, vaa1.MessageID(), val, "expected a different message id")
+
+	// ARRANGE: Add a vaa with a false second part of the pair
+	vaa2 := utils.CreateVAA(t, "second test vaa", 2)
+	hash2 := vaa2.SigningDigest().Bytes()
+	err = k.VAAArchive.Set(ctx, hash2, collections.Join(vaa2.MessageID(), false))
+	require.NoError(t, err, "expected no error setting the vaa in the archive")
+
+	// ACT
+	archive, err = k.GetVAAArchive(ctx)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the archive is not empty")
+	require.Len(t, archive, 1, "expected one vaa in the archive")
+	_, found = archive[hex.EncodeToString(hash2)]
+	require.False(t, found, "expected vaa 2 to NOT be in the archive")
 }
