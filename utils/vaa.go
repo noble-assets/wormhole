@@ -24,6 +24,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"testing"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -48,9 +49,10 @@ func GuardianSigner() Guardian {
 
 func CreateVAA(t *testing.T, guardians []Guardian, payload string, sequence uint64) *vaautils.VAA {
 	vaa := vaautils.VAA{
-		Payload:  []byte(payload),
-		Sequence: sequence,
-		Version:  vaautils.SupportedVAAVersion,
+		Payload:   []byte(payload),
+		Sequence:  sequence,
+		Version:   vaautils.SupportedVAAVersion,
+		Timestamp: time.Now().UTC().Local().Local().Truncate(time.Second),
 	}
 
 	var guardianAddresses []common.Address

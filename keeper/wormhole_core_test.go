@@ -24,8 +24,8 @@ import (
 	"testing"
 
 	"cosmossdk.io/collections"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
-	"github.com/wormhole-foundation/wormhole/sdk/vaa"
 
 	"github.com/noble-assets/wormhole/types"
 	"github.com/noble-assets/wormhole/utils"
@@ -82,7 +82,7 @@ func TestParseAndVerifyVAA(t *testing.T) {
 	require.ErrorContains(t, err, "expired", "expected a different error")
 
 	// ARRANGE: VAA is valid but no addresses in the VAA for the guardian set.
-	guardianSet := types.GuardianSet{ExpirationTime: uint64(ctx.HeaderInfo().Time.Unix())}
+	guardianSet := types.GuardianSet{ExpirationTime: uint64(sdk.UnwrapSDKContext(ctx).HeaderInfo().Time.Unix())}
 	err = k.GuardianSets.Set(ctx, 0, guardianSet)
 	require.NoError(t, err, "expected no error setting the guardian set")
 
@@ -101,21 +101,36 @@ func TestParseAndVerifyVAA(t *testing.T) {
 
 	// ACT
 	_, err = k.ParseAndVerifyVAA(ctx, bzVaa)
-	vaa1.Signatures = []*vaa.Signature{}
 
 	// ASSERT
 	require.Error(t, err, "expected error when the guardian is set is different than signing set")
 	require.ErrorContains(t, err, "failed to verify", "expected a different error")
 
-	// ARRANGE: VAA is valid but no addresses in the VAA for the guardian set.
-	guardianSet.Addresses = [][]byte{guardian.Address[:]}
+	// ARRANGE: VAA is valid.
+	vaa2 := utils.CreateVAA(t, []utils.Guardian{guardian}, "second test vaa", 1)
+	bzVaa2, err := vaa2.Marshal()
+	require.NoError(t, err, "expected no error marshaling the vaa")
+	guardianSet = types.GuardianSet{
+		ExpirationTime: uint64(sdk.UnwrapSDKContext(ctx).HeaderInfo().Time.Unix()),
+		Addresses:      [][]byte{guardian.Address[:]},
+	}
 	err = k.GuardianSets.Set(ctx, 0, guardianSet)
 	require.NoError(t, err, "expected no error setting the guardian set")
 
 	// ACT
-	_, err = k.ParseAndVerifyVAA(ctx, bzVaa)
+	vaaResp, err := k.ParseAndVerifyVAA(ctx, bzVaa2)
 
 	// ASSERT
 	require.NoError(t, err, "expected no error when VAA is valid")
 	require.NoError(t, err, "expected no error retrieving an archived vaa")
+	require.Equal(t, vaa2.ConsistencyLevel, vaaResp.ConsistencyLevel, "expected a different ConsistencyLevel")
+	require.Equal(t, vaa2.EmitterAddress, vaaResp.EmitterAddress, "expected a different EmitterAddress")
+	require.Equal(t, vaa2.EmitterChain, vaaResp.EmitterChain, "expected a different EmitterChain")
+	require.Equal(t, vaa2.GuardianSetIndex, vaaResp.GuardianSetIndex, "expected a different GuardianSetIndex")
+	require.Equal(t, vaa2.Nonce, vaaResp.Nonce, "expected a different Nonce")
+	require.Equal(t, vaa2.Payload, vaaResp.Payload, "expected a different Payload")
+	require.Equal(t, vaa2.Sequence, vaaResp.Sequence, "expected a different Sequence")
+	require.Equal(t, vaa2.Signatures, vaaResp.Signatures, "expected a different Signatures")
+	require.Equal(t, vaa2.Timestamp, vaaResp.Timestamp, "expected a different timestamp")
+	require.Equal(t, vaa2.Version, vaaResp.Version, "expected a different version")
 }
