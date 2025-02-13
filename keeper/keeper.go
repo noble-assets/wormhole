@@ -50,7 +50,9 @@ type Keeper struct {
 	WormchainChannel collections.Item[string]
 	GuardianSets     collections.Map[uint32, types.GuardianSet]
 	Sequences        collections.Map[[]byte, uint64]
-	VAAArchive       *collections.IndexedMap[[]byte, collections.Pair[string, bool], VAAArchiveIndexes]
+	// TODO: what is the purpose of the bool?
+	// VAAArchive is used to store the touple (VAA message ID, ???) indexed by the hash of the VAA.
+	VAAArchive *collections.IndexedMap[[]byte, collections.Pair[string, bool], VAAArchiveIndexes]
 
 	ics4Wrapper  types.ICS4Wrapper
 	portKeeper   types.PortKeeper
