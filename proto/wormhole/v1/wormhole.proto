@@ -15,14 +15,12 @@ message Config {
 
   uint32 guardian_set_index = 2;
 
-  uint64 guardian_set_expiry = 3;
-
-  uint32 gov_chain = 4 [
+  uint32 gov_chain = 3 [
     (gogoproto.customtype) = "uint16",
     (gogoproto.nullable) = false
   ];
 
-  bytes gov_address = 5;
+  bytes gov_address = 4;
 }
 
 // GuardianSet is an object used to store a specific guardian set in state.

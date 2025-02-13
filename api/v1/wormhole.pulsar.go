@@ -14,12 +14,11 @@ import (
 )
 
 var (
-	md_Config                     protoreflect.MessageDescriptor
-	fd_Config_chain_id            protoreflect.FieldDescriptor
-	fd_Config_guardian_set_index  protoreflect.FieldDescriptor
-	fd_Config_guardian_set_expiry protoreflect.FieldDescriptor
-	fd_Config_gov_chain           protoreflect.FieldDescriptor
-	fd_Config_gov_address         protoreflect.FieldDescriptor
+	md_Config                    protoreflect.MessageDescriptor
+	fd_Config_chain_id           protoreflect.FieldDescriptor
+	fd_Config_guardian_set_index protoreflect.FieldDescriptor
+	fd_Config_gov_chain          protoreflect.FieldDescriptor
+	fd_Config_gov_address        protoreflect.FieldDescriptor
 )
 
 func init() {
@@ -27,7 +26,6 @@ func init() {
 	md_Config = File_wormhole_v1_wormhole_proto.Messages().ByName("Config")
 	fd_Config_chain_id = md_Config.Fields().ByName("chain_id")
 	fd_Config_guardian_set_index = md_Config.Fields().ByName("guardian_set_index")
-	fd_Config_guardian_set_expiry = md_Config.Fields().ByName("guardian_set_expiry")
 	fd_Config_gov_chain = md_Config.Fields().ByName("gov_chain")
 	fd_Config_gov_address = md_Config.Fields().ByName("gov_address")
 }
@@ -109,12 +107,6 @@ func (x *fastReflection_Config) Range(f func(protoreflect.FieldDescriptor, proto
 			return
 		}
 	}
-	if x.GuardianSetExpiry != uint64(0) {
-		value := protoreflect.ValueOfUint64(x.GuardianSetExpiry)
-		if !f(fd_Config_guardian_set_expiry, value) {
-			return
-		}
-	}
 	if x.GovChain != uint32(0) {
 		value := protoreflect.ValueOfUint32(x.GovChain)
 		if !f(fd_Config_gov_chain, value) {
@@ -146,8 +138,6 @@ func (x *fastReflection_Config) Has(fd protoreflect.FieldDescriptor) bool {
 		return x.ChainId != uint32(0)
 	case "wormhole.v1.Config.guardian_set_index":
 		return x.GuardianSetIndex != uint32(0)
-	case "wormhole.v1.Config.guardian_set_expiry":
-		return x.GuardianSetExpiry != uint64(0)
 	case "wormhole.v1.Config.gov_chain":
 		return x.GovChain != uint32(0)
 	case "wormhole.v1.Config.gov_address":
@@ -172,8 +162,6 @@ func (x *fastReflection_Config) Clear(fd protoreflect.FieldDescriptor) {
 		x.ChainId = uint32(0)
 	case "wormhole.v1.Config.guardian_set_index":
 		x.GuardianSetIndex = uint32(0)
-	case "wormhole.v1.Config.guardian_set_expiry":
-		x.GuardianSetExpiry = uint64(0)
 	case "wormhole.v1.Config.gov_chain":
 		x.GovChain = uint32(0)
 	case "wormhole.v1.Config.gov_address":
@@ -200,9 +188,6 @@ func (x *fastReflection_Config) Get(descriptor protoreflect.FieldDescriptor) pro
 	case "wormhole.v1.Config.guardian_set_index":
 		value := x.GuardianSetIndex
 		return protoreflect.ValueOfUint32(value)
-	case "wormhole.v1.Config.guardian_set_expiry":
-		value := x.GuardianSetExpiry
-		return protoreflect.ValueOfUint64(value)
 	case "wormhole.v1.Config.gov_chain":
 		value := x.GovChain
 		return protoreflect.ValueOfUint32(value)
@@ -233,8 +218,6 @@ func (x *fastReflection_Config) Set(fd protoreflect.FieldDescriptor, value proto
 		x.ChainId = uint32(value.Uint())
 	case "wormhole.v1.Config.guardian_set_index":
 		x.GuardianSetIndex = uint32(value.Uint())
-	case "wormhole.v1.Config.guardian_set_expiry":
-		x.GuardianSetExpiry = value.Uint()
 	case "wormhole.v1.Config.gov_chain":
 		x.GovChain = uint32(value.Uint())
 	case "wormhole.v1.Config.gov_address":
@@ -263,8 +246,6 @@ func (x *fastReflection_Config) Mutable(fd protoreflect.FieldDescriptor) protore
 		panic(fmt.Errorf("field chain_id of message wormhole.v1.Config is not mutable"))
 	case "wormhole.v1.Config.guardian_set_index":
 		panic(fmt.Errorf("field guardian_set_index of message wormhole.v1.Config is not mutable"))
-	case "wormhole.v1.Config.guardian_set_expiry":
-		panic(fmt.Errorf("field guardian_set_expiry of message wormhole.v1.Config is not mutable"))
 	case "wormhole.v1.Config.gov_chain":
 		panic(fmt.Errorf("field gov_chain of message wormhole.v1.Config is not mutable"))
 	case "wormhole.v1.Config.gov_address":
@@ -286,8 +267,6 @@ func (x *fastReflection_Config) NewField(fd protoreflect.FieldDescriptor) protor
 		return protoreflect.ValueOfUint32(uint32(0))
 	case "wormhole.v1.Config.guardian_set_index":
 		return protoreflect.ValueOfUint32(uint32(0))
-	case "wormhole.v1.Config.guardian_set_expiry":
-		return protoreflect.ValueOfUint64(uint64(0))
 	case "wormhole.v1.Config.gov_chain":
 		return protoreflect.ValueOfUint32(uint32(0))
 	case "wormhole.v1.Config.gov_address":
@@ -367,9 +346,6 @@ func (x *fastReflection_Config) ProtoMethods() *protoiface.Methods {
 		if x.GuardianSetIndex != 0 {
 			n += 1 + runtime.Sov(uint64(x.GuardianSetIndex))
 		}
-		if x.GuardianSetExpiry != 0 {
-			n += 1 + runtime.Sov(uint64(x.GuardianSetExpiry))
-		}
 		if x.GovChain != 0 {
 			n += 1 + runtime.Sov(uint64(x.GovChain))
 		}
@@ -411,15 +387,10 @@ func (x *fastReflection_Config) ProtoMethods() *protoiface.Methods {
 			copy(dAtA[i:], x.GovAddress)
 			i = runtime.EncodeVarint(dAtA, i, uint64(len(x.GovAddress)))
 			i--
-			dAtA[i] = 0x2a
+			dAtA[i] = 0x22
 		}
 		if x.GovChain != 0 {
 			i = runtime.EncodeVarint(dAtA, i, uint64(x.GovChain))
-			i--
-			dAtA[i] = 0x20
-		}
-		if x.GuardianSetExpiry != 0 {
-			i = runtime.EncodeVarint(dAtA, i, uint64(x.GuardianSetExpiry))
 			i--
 			dAtA[i] = 0x18
 		}
@@ -522,25 +493,6 @@ func (x *fastReflection_Config) ProtoMethods() *protoiface.Methods {
 				}
 			case 3:
 				if wireType != 0 {
-					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field GuardianSetExpiry", wireType)
-				}
-				x.GuardianSetExpiry = 0
-				for shift := uint(0); ; shift += 7 {
-					if shift >= 64 {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, runtime.ErrIntOverflow
-					}
-					if iNdEx >= l {
-						return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, io.ErrUnexpectedEOF
-					}
-					b := dAtA[iNdEx]
-					iNdEx++
-					x.GuardianSetExpiry |= uint64(b&0x7F) << shift
-					if b < 0x80 {
-						break
-					}
-				}
-			case 4:
-				if wireType != 0 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field GovChain", wireType)
 				}
 				x.GovChain = 0
@@ -558,7 +510,7 @@ func (x *fastReflection_Config) ProtoMethods() *protoiface.Methods {
 						break
 					}
 				}
-			case 5:
+			case 4:
 				if wireType != 2 {
 					return protoiface.UnmarshalOutput{NoUnkeyedLiterals: input.NoUnkeyedLiterals, Flags: input.Flags}, fmt.Errorf("proto: wrong wireType = %d for field GovAddress", wireType)
 				}
@@ -1174,11 +1126,10 @@ type Config struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ChainId           uint32 `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
-	GuardianSetIndex  uint32 `protobuf:"varint,2,opt,name=guardian_set_index,json=guardianSetIndex,proto3" json:"guardian_set_index,omitempty"`
-	GuardianSetExpiry uint64 `protobuf:"varint,3,opt,name=guardian_set_expiry,json=guardianSetExpiry,proto3" json:"guardian_set_expiry,omitempty"`
-	GovChain          uint32 `protobuf:"varint,4,opt,name=gov_chain,json=govChain,proto3" json:"gov_chain,omitempty"`
-	GovAddress        []byte `protobuf:"bytes,5,opt,name=gov_address,json=govAddress,proto3" json:"gov_address,omitempty"`
+	ChainId          uint32 `protobuf:"varint,1,opt,name=chain_id,json=chainId,proto3" json:"chain_id,omitempty"`
+	GuardianSetIndex uint32 `protobuf:"varint,2,opt,name=guardian_set_index,json=guardianSetIndex,proto3" json:"guardian_set_index,omitempty"`
+	GovChain         uint32 `protobuf:"varint,3,opt,name=gov_chain,json=govChain,proto3" json:"gov_chain,omitempty"`
+	GovAddress       []byte `protobuf:"bytes,4,opt,name=gov_address,json=govAddress,proto3" json:"gov_address,omitempty"`
 }
 
 func (x *Config) Reset() {
@@ -1211,13 +1162,6 @@ func (x *Config) GetChainId() uint32 {
 func (x *Config) GetGuardianSetIndex() uint32 {
 	if x != nil {
 		return x.GuardianSetIndex
-	}
-	return 0
-}
-
-func (x *Config) GetGuardianSetExpiry() uint64 {
-	if x != nil {
-		return x.GuardianSetExpiry
 	}
 	return 0
 }
@@ -1287,20 +1231,17 @@ var file_wormhole_v1_wormhole_proto_rawDesc = []byte{
 	0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12, 0x0b, 0x77, 0x6f,
 	0x72, 0x6d, 0x68, 0x6f, 0x6c, 0x65, 0x2e, 0x76, 0x31, 0x1a, 0x14, 0x67, 0x6f, 0x67, 0x6f, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x67, 0x6f, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22,
-	0xdf, 0x01, 0x0a, 0x06, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x29, 0x0a, 0x08, 0x63, 0x68,
+	0xaf, 0x01, 0x0a, 0x06, 0x43, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x12, 0x29, 0x0a, 0x08, 0x63, 0x68,
 	0x61, 0x69, 0x6e, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0d, 0x42, 0x0e, 0xc8, 0xde,
 	0x1f, 0x00, 0xda, 0xde, 0x1f, 0x06, 0x75, 0x69, 0x6e, 0x74, 0x31, 0x36, 0x52, 0x07, 0x63, 0x68,
 	0x61, 0x69, 0x6e, 0x49, 0x64, 0x12, 0x2c, 0x0a, 0x12, 0x67, 0x75, 0x61, 0x72, 0x64, 0x69, 0x61,
 	0x6e, 0x5f, 0x73, 0x65, 0x74, 0x5f, 0x69, 0x6e, 0x64, 0x65, 0x78, 0x18, 0x02, 0x20, 0x01, 0x28,
 	0x0d, 0x52, 0x10, 0x67, 0x75, 0x61, 0x72, 0x64, 0x69, 0x61, 0x6e, 0x53, 0x65, 0x74, 0x49, 0x6e,
-	0x64, 0x65, 0x78, 0x12, 0x2e, 0x0a, 0x13, 0x67, 0x75, 0x61, 0x72, 0x64, 0x69, 0x61, 0x6e, 0x5f,
-	0x73, 0x65, 0x74, 0x5f, 0x65, 0x78, 0x70, 0x69, 0x72, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x11, 0x67, 0x75, 0x61, 0x72, 0x64, 0x69, 0x61, 0x6e, 0x53, 0x65, 0x74, 0x45, 0x78, 0x70,
-	0x69, 0x72, 0x79, 0x12, 0x2b, 0x0a, 0x09, 0x67, 0x6f, 0x76, 0x5f, 0x63, 0x68, 0x61, 0x69, 0x6e,
-	0x18, 0x04, 0x20, 0x01, 0x28, 0x0d, 0x42, 0x0e, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x06,
+	0x64, 0x65, 0x78, 0x12, 0x2b, 0x0a, 0x09, 0x67, 0x6f, 0x76, 0x5f, 0x63, 0x68, 0x61, 0x69, 0x6e,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x42, 0x0e, 0xc8, 0xde, 0x1f, 0x00, 0xda, 0xde, 0x1f, 0x06,
 	0x75, 0x69, 0x6e, 0x74, 0x31, 0x36, 0x52, 0x08, 0x67, 0x6f, 0x76, 0x43, 0x68, 0x61, 0x69, 0x6e,
 	0x12, 0x1f, 0x0a, 0x0b, 0x67, 0x6f, 0x76, 0x5f, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x18,
-	0x05, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x67, 0x6f, 0x76, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
+	0x04, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0a, 0x67, 0x6f, 0x76, 0x41, 0x64, 0x64, 0x72, 0x65, 0x73,
 	0x73, 0x22, 0x54, 0x0a, 0x0b, 0x47, 0x75, 0x61, 0x72, 0x64, 0x69, 0x61, 0x6e, 0x53, 0x65, 0x74,
 	0x12, 0x1c, 0x0a, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x18, 0x01, 0x20,
 	0x03, 0x28, 0x0c, 0x52, 0x09, 0x61, 0x64, 0x64, 0x72, 0x65, 0x73, 0x73, 0x65, 0x73, 0x12, 0x27,
