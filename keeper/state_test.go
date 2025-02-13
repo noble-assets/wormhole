@@ -45,11 +45,10 @@ func TestGetChain(t *testing.T) {
 
 	// ARRANGE: Add empty config data to state
 	config := types.Config{
-		ChainId:           0,
-		GuardianSetIndex:  0,
-		GuardianSetExpiry: 0,
-		GovChain:          0,
-		GovAddress:        []byte{},
+		ChainId:          0,
+		GuardianSetIndex: 0,
+		GovChain:         0,
+		GovAddress:       []byte{},
 	}
 	err = k.Config.Set(ctx, config)
 	require.NoError(t, err, "expected no error setting the config")
