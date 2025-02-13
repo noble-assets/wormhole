@@ -59,3 +59,14 @@ proto-lint:
 	@docker run --rm --volume "$(PWD)":/workspace --workdir /workspace \
 		bufbuild/buf:$(BUF_VERSION) lint
 	@echo "✅ Completed protobuf linting!"
+
+
+###############################################################################
+###                                 Testing                                 ###
+###############################################################################
+
+test-unit:
+	@echo "🤖 Running unit tests..."
+	@go test -cover -coverpkg=./keeper/... -coverprofile=coverage.out -race -v ./keeper/...
+	@go tool cover -html=coverage.out && go tool cover -func=coverage.out
+	@echo "✅ Completed unit tests!"

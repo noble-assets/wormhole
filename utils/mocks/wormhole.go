@@ -40,6 +40,7 @@ import (
 	"github.com/noble-assets/wormhole/types"
 )
 
+// WormholeKeeper returns an instance of the Keeper with all dependencies mocked.
 func WormholeKeeper(t testing.TB) (sdk.Context, *keeper.Keeper) {
 	ics4w := ICS4Wrapper{}
 	pk := PortKeeper{}
