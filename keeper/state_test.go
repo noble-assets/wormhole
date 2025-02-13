@@ -72,23 +72,23 @@ func TestGetGuardianSets(t *testing.T) {
 	require.Empty(t, guardianSets, "expected empty map")
 
 	// ARRANGE: Add guardian sets
-	setOne := types.GuardianSet{
+	set1 := types.GuardianSet{
 		Addresses: [][]byte{
 			utils.GenerateRandomBytes(20),
 			utils.GenerateRandomBytes(20),
 		},
 		ExpirationTime: uint64(0),
 	}
-	setTwo := types.GuardianSet{
+	set2 := types.GuardianSet{
 		Addresses: [][]byte{
 			utils.GenerateRandomBytes(20),
 		},
 		ExpirationTime: uint64(1),
 	}
 
-	err = k.GuardianSets.Set(ctx, 1, setOne)
+	err = k.GuardianSets.Set(ctx, 1, set1)
 	require.NoError(t, err, "expected no error setting the guardian")
-	err = k.GuardianSets.Set(ctx, 2, setTwo)
+	err = k.GuardianSets.Set(ctx, 2, set2)
 	require.NoError(t, err, "expected no error setting the guardian")
 
 	// ACT
@@ -97,6 +97,48 @@ func TestGetGuardianSets(t *testing.T) {
 	// ASSERT
 	require.NoError(t, err, "expected no error when the set is empty")
 	require.Len(t, guardianSets, 2, "expected two sets")
-	require.Equal(t, setOne, guardianSets[1], "expected different values in first set")
-	require.Equal(t, setTwo, guardianSets[2], "expected different values in second set")
+	require.Equal(t, set1, guardianSets[1], "expected different values in first set")
+	require.Equal(t, set2, guardianSets[2], "expected different values in second set")
+}
+
+func TestGetSequences(t *testing.T) {
+	// ARRANGE: Create environment
+	ctx, k := mocks.WormholeKeeper(t)
+
+	// ACT
+	sequences, err := k.GetSequences(ctx)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when no sequences are registered")
+	require.Empty(t, sequences, "expected empty map")
+
+	// ARRANGE: Add addresses with less than 20 bytes
+	adddress1 := utils.GenerateRandomBytes(10)
+
+	err = k.Sequences.Set(ctx, adddress1, 0)
+	require.NoError(t, err, "expected no error setting the sequence")
+
+	// ACT
+	sequences, err = k.GetSequences(ctx)
+
+	// ASSERT
+	require.Error(t, err, "expected an error when an address is less than 20 bytes")
+	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
+	require.Empty(t, sequences, "expected empty map")
+
+	// ARRANGE: Add another valid address
+	adddress2 := utils.GenerateRandomBytes(20)
+
+	err = k.Sequences.Set(ctx, adddress2, 1)
+	require.NoError(t, err, "expected no error setting the sequence")
+
+	// ACT
+	sequences, err = k.GetSequences(ctx)
+
+	// ASSERT
+	require.Error(t, err, "expected an error when an address is less than 20 bytes")
+	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
+	require.Len(t, sequences, 1, "expected the valid address to be in the map")
+
+	// TODO: how to make address codec fail?
 }

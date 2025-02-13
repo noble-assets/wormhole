@@ -24,6 +24,7 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"fmt"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/collections/indexes"
@@ -59,7 +60,10 @@ func (k *Keeper) GetSequences(ctx context.Context) (map[string]uint64, error) {
 	sequences := make(map[string]uint64)
 
 	err := k.Sequences.Walk(ctx, nil, func(sender []byte, sequence uint64) (stop bool, err error) {
-		// NOTE: This assumes that addresses contain 20 bytes.
+		if len(sender) < 20 {
+			return false, fmt.Errorf("address with less than 20 bytes: %s", sender)
+		}
+
 		address, err := k.addressCodec.BytesToString(sender[12:])
 		if err != nil {
 			// NOTE: We continue in the case of an encoding error.
