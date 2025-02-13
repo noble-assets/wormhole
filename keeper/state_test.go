@@ -154,7 +154,7 @@ func TestGetSequences(t *testing.T) {
 	// ASSERT
 	require.Error(t, err, "expected an error because the invalid sender is still in the map")
 	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
-	require.Len(t, sequences, 1, "expected one item in the map because halded before the failure")
+	require.Len(t, sequences, 1, "expected one item in the map because handled before the error")
 }
 
 func TestGetVAAArchive(t *testing.T) {
