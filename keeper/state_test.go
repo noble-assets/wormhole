@@ -115,7 +115,7 @@ func TestGetSequences(t *testing.T) {
 	require.Empty(t, sequences, "expected empty map")
 
 	// ARRANGE: Add addresses with less than 20 bytes
-	adddress1 := utils.GenerateRandomBytes(10)
+	adddress1 := []byte("1123456789")
 
 	err = k.Sequences.Set(ctx, adddress1, 0)
 	require.NoError(t, err, "expected no error setting the sequence")
@@ -128,8 +128,8 @@ func TestGetSequences(t *testing.T) {
 	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
 	require.Empty(t, sequences, "expected empty map")
 
-	// ARRANGE: Add another valid address
-	adddress2 := utils.GenerateRandomBytes(20)
+	// ARRANGE: Add another with 20 bytes.
+	adddress2 := []byte("1123456789ABCDEF0123")
 
 	err = k.Sequences.Set(ctx, adddress2, 1)
 	require.NoError(t, err, "expected no error setting the sequence")
@@ -138,11 +138,23 @@ func TestGetSequences(t *testing.T) {
 	sequences, err = k.GetSequences(ctx)
 
 	// ASSERT
-	require.Error(t, err, "expected an error when an address is less than 20 bytes")
+	require.Error(t, err, "expected an error because the invalid sender is still in the map")
 	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
-	require.Len(t, sequences, 1, "expected the valid address to be in the map")
+	require.Len(t, sequences, 0, "expected the map to be still empty")
 
-	// TODO: how to make address codec fail?
+	// ARRANGE: Add another with 20 bytes.
+	adddress3 := []byte("0123456789ABCDEF0123")
+
+	err = k.Sequences.Set(ctx, adddress3, 1)
+	require.NoError(t, err, "expected no error setting the sequence")
+
+	// ACT
+	sequences, err = k.GetSequences(ctx)
+
+	// ASSERT
+	require.Error(t, err, "expected an error because the invalid sender is still in the map")
+	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
+	require.Len(t, sequences, 1, "expected one item in the map because halded before the failure")
 }
 
 func TestGetVAAArchive(t *testing.T) {
