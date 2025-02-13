@@ -96,19 +96,29 @@ func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.Gover
 		if err != nil {
 			return errors.Wrap(err, "failed to get config from state")
 		}
-		blockTime := uint64(k.headerService.GetHeaderInfo(ctx).Time.Unix())
 
 		oldIndex := cfg.GuardianSetIndex
 		if index != oldIndex+1 {
 			return fmt.Errorf("invalid guardian set index: expected %d, got %d", oldIndex+1, index)
 		}
 
+		oldGuardianSet, err := k.GuardianSets.Get(ctx, oldIndex)
+		if err != nil {
+			return errors.Wrap(err, "failed to get old guardian set from state")
+		}
+		blockTime := uint64(k.headerService.GetHeaderInfo(ctx).Time.Unix())
+		oldGuardianSet.ExpirationTime = blockTime + 86400
+
+		err = k.GuardianSets.Set(ctx, oldIndex, oldGuardianSet)
+		if err != nil {
+			return errors.Wrap(err, "failed to set old guardian set in state")
+		}
 		err = k.GuardianSets.Set(ctx, index, types.GuardianSet{
 			Addresses:      addresses,
-			ExpirationTime: blockTime + cfg.GuardianSetExpiry,
+			ExpirationTime: 0,
 		})
 		if err != nil {
-			return errors.Wrap(err, "failed to set guardian set in state")
+			return errors.Wrap(err, "failed to set new guardian set in state")
 		}
 		cfg.GuardianSetIndex += 1
 		err = k.Config.Set(ctx, cfg)
