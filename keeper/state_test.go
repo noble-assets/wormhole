@@ -25,6 +25,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/noble-assets/wormhole/types"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
@@ -37,4 +38,23 @@ func TestGetChain(t *testing.T) {
 
 	// ASSERT
 	require.Error(t, err, "expected error when config not set")
+	require.ErrorContains(t, err, "unable to get", "expected a different error")
+
+	// ARRANGE: Add empty config data to state
+	config := types.Config{
+		ChainId:           0,
+		GuardianSetIndex:  0,
+		GuardianSetExpiry: 0,
+		GovChain:          0,
+		GovAddress:        []byte{},
+	}
+	err = k.Config.Set(ctx, config)
+	require.NoError(t, err, "expected no error setting the config")
+
+	// ACT
+	chain, err := k.GetChain(ctx)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when config is set")
+	require.Equal(t, config.ChainId, chain, "expected different chain id")
 }
