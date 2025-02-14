@@ -76,7 +76,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestWormchainChannel(t *testing.T) {
-	// ARRANGE: Create environment and nil request.
+	// ARRANGE
 	ctx, k := mocks.WormholeKeeper(t)
 	qs := keeper.NewQueryServer(k)
 
@@ -95,7 +95,7 @@ func TestWormchainChannel(t *testing.T) {
 	resp, err = qs.WormchainChannel(ctx, &req)
 
 	// ASSERT
-	require.Error(t, err, "expected error when the request is nil")
+	require.Error(t, err)
 	require.ErrorContains(t, err, "wormchain channel not configured in state", "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
@@ -110,4 +110,61 @@ func TestWormchainChannel(t *testing.T) {
 	// ASSERT
 	require.NoError(t, err, "expected no error when the request is valid and channel is set")
 	require.Equal(t, wormchainChannel, resp.WormchainChannel, "expected a different channel")
+}
+
+func TestGuardianSets(t *testing.T) {
+	// ARRANGE
+	ctx, k := mocks.WormholeKeeper(t)
+	qs := keeper.NewQueryServer(k)
+
+	// ACT
+	resp, err := qs.GuardianSets(ctx, nil)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the request is nil")
+	require.ErrorIs(t, err, types.ErrInvalidRequest, "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req := types.QueryGuardianSets{}
+
+	// ACT
+	resp, err = qs.GuardianSets(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when no set is stored")
+	require.Equal(t, make(map[uint32]types.GuardianSet), resp.GuardianSets, "expected no sets")
+
+	// ARRANGE
+	key1 := uint32(0)
+	set1 := types.GuardianSet{
+		Addresses: [][]byte{
+			[]byte("address1"),
+			[]byte("address2"),
+		},
+		ExpirationTime: uint64(1),
+	}
+	err = k.GuardianSets.Set(ctx, key1, set1)
+	require.NoError(t, err, "expected no error setting the guardian set")
+
+	key2 := uint32(1)
+	set2 := types.GuardianSet{
+		Addresses: [][]byte{
+			[]byte("address3"),
+			[]byte("address4"),
+			[]byte("address5"),
+		},
+		ExpirationTime: uint64(3),
+	}
+	err = k.GuardianSets.Set(ctx, key2, set2)
+	require.NoError(t, err, "expected no error setting the guardian set")
+
+	// ACT
+	resp, err = qs.GuardianSets(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the request is valid and the a guardian set is in the store")
+	require.Len(t, resp.GuardianSets, 2, "expected a different number of sets")
+	require.Equal(t, set1, resp.GuardianSets[0], "expected a different first set")
+	require.Equal(t, set2, resp.GuardianSets[1], "expected a different second set")
 }
