@@ -76,6 +76,8 @@ func (p *GuardianSetUpgrade) Parse(payload []byte) error {
 	}
 
 	p.NewGuardianSetIndex = newGuardianSetIndex
+	p.NewGuardianSet.Addresses = addresses
+	p.NewGuardianSet.ExpirationTime = 0
 
 	return nil
 }
