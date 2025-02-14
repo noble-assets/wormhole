@@ -168,3 +168,116 @@ func TestGuardianSets(t *testing.T) {
 	require.Equal(t, set1, resp.GuardianSets[0], "expected a different first set")
 	require.Equal(t, set2, resp.GuardianSets[1], "expected a different second set")
 }
+
+func TestGuardianSet(t *testing.T) {
+	// ARRANGE
+	ctx, k := mocks.WormholeKeeper(t)
+	qs := keeper.NewQueryServer(k)
+
+	// ACT
+	resp, err := qs.GuardianSet(ctx, nil)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the request is nil")
+	require.ErrorIs(t, err, types.ErrInvalidRequest, "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req := types.QueryGuardianSet{}
+
+	// ACT
+	resp, err = qs.GuardianSet(ctx, &req)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the request is nil")
+	require.ErrorContains(t, err, "invalid guardian set index", "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req = types.QueryGuardianSet{Index: "invalid"}
+
+	// ACT
+	resp, err = qs.GuardianSet(ctx, &req)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the request index is invalid")
+	require.ErrorContains(t, err, "invalid guardian set index", "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req = types.QueryGuardianSet{Index: "current"}
+
+	// ACT
+	resp, err = qs.GuardianSet(ctx, &req)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the request is valid but config not set")
+	require.ErrorContains(t, err, "unable to get config from state", "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req = types.QueryGuardianSet{Index: "current"}
+
+	// ACT
+	cfg := types.Config{GuardianSetIndex: 33}
+	err = k.Config.Set(ctx, cfg)
+	require.NoError(t, err, "expected no error setting the config")
+	resp, err = qs.GuardianSet(ctx, &req)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the guardian set is not stored")
+	require.ErrorContains(t, err, "unable to get guardian set", "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req = types.QueryGuardianSet{Index: "1"}
+
+	// ACT
+	resp, err = qs.GuardianSet(ctx, &req)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the guardian set is not stored")
+	require.ErrorContains(t, err, "unable to get guardian set", "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req = types.QueryGuardianSet{Index: "1"}
+
+	key := uint32(1)
+	set := types.GuardianSet{
+		Addresses: [][]byte{
+			[]byte("address1"),
+			[]byte("address2"),
+		},
+		ExpirationTime: uint64(1),
+	}
+	err = k.GuardianSets.Set(ctx, key, set)
+	require.NoError(t, err, "expected no error setting the guardian set")
+
+	// ACT
+	resp, err = qs.GuardianSet(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the guardian set associated with the index exists")
+	require.Equal(t, set, resp.GuardianSet, "expected a different set")
+
+	// ARRANGE
+	req = types.QueryGuardianSet{Index: "current"}
+
+	key = uint32(33)
+	set = types.GuardianSet{
+		Addresses: [][]byte{
+			[]byte("address0"),
+		},
+		ExpirationTime: uint64(0),
+	}
+	err = k.GuardianSets.Set(ctx, key, set)
+	require.NoError(t, err, "expected no error setting the guardian set")
+
+	// ACT
+	resp, err = qs.GuardianSet(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the guardian set associated with the current index exists")
+	require.Equal(t, set, resp.GuardianSet, "expected a different set")
+}
