@@ -21,9 +21,7 @@
 package keeper
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"strconv"
 
@@ -37,24 +35,23 @@ import (
 func (k *Keeper) HandleIBCReceiverGovernancePacket(ctx context.Context, pkt types.GovernancePacket) error {
 	switch pkt.Action {
 	case uint8(vaautils.IbcReceiverActionUpdateChannelChain):
-		if len(pkt.Payload) != 66 {
-			return types.ErrMalformedPayload
+		var updateChannelChain types.UpdateChannelChain
+		err := updateChannelChain.Parse(pkt.Payload)
+		if err != nil {
+			return err
 		}
 
-		channel := string(bytes.TrimLeft(pkt.Payload[0:64], "\x00"))
-		chain := binary.BigEndian.Uint16(pkt.Payload[64:66])
-
-		if chain != uint16(vaautils.ChainIDWormchain) {
-			return types.ErrInvalidChannel
+		if updateChannelChain.Chain != uint16(vaautils.ChainIDWormchain) {
+			return types.ErrInvalidChain
 		}
 
-		if err := k.WormchainChannel.Set(ctx, channel); err != nil {
+		if err := k.WormchainChannel.Set(ctx, string(updateChannelChain.ChannelID)); err != nil {
 			return errors.Wrap(err, "failed to set wormchain channel in state")
 		}
 
 		return k.eventService.EventManager(ctx).EmitKV(ctx, "UpdateChannelChain",
-			event.Attribute{Key: "chain_id", Value: strconv.Itoa(int(chain))},
-			event.Attribute{Key: "channel_id", Value: channel},
+			event.Attribute{Key: "chain_id", Value: strconv.Itoa(int(updateChannelChain.Chain))},
+			event.Attribute{Key: "channel_id", Value: string(updateChannelChain.ChannelID)},
 		)
 	default:
 		return errors.Wrapf(types.ErrUnsupportedGovernanceAction, "module: %s, type: %d", pkt.Module, pkt.Action)

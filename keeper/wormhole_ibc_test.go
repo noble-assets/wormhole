@@ -28,11 +28,85 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
 	"github.com/noble-assets/wormhole/types"
 	"github.com/noble-assets/wormhole/utils"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
+
+func TestHandleIBCReceiverGovernancePacket(t *testing.T) {
+	// ARRANGE: Set default variable and does not initialize the state.
+	ctx, k := mocks.WormholeKeeper(t)
+	packet := types.GovernancePacket{}
+
+	// ACT
+	err := k.HandleIBCReceiverGovernancePacket(ctx, packet)
+
+	// ASSERT
+	require.Error(t, err, "expected error when packet is empty")
+	require.ErrorContains(t, err, "unsupported governance action", "expected a different error")
+
+	// ARRANGE
+	packet.Action = 3
+	packet.Module = "IbcReceiver"
+
+	// ACT
+	err = k.HandleIBCReceiverGovernancePacket(ctx, packet)
+
+	// ASSERT
+	require.Error(t, err, "expected error when governance action is not 1")
+	require.ErrorIs(t, err, types.ErrUnsupportedGovernanceAction, "expected a different error")
+
+	// ARRANGE: The action is valid but the payload is empty.
+	packet.Action = 1
+
+	// ACT
+	err = k.HandleIBCReceiverGovernancePacket(ctx, packet)
+
+	// ASSERT
+	require.Error(t, err, "expected error when governance malformed payload")
+	require.ErrorIs(t, err, types.ErrMalformedPayload, "expected a different error")
+
+	// ARRANGE: Chain ID is not wormchain
+	channelBz, err := vaautils.LeftPadIbcChannelId("channel-0")
+	require.NoError(t, err)
+	// Shift left by eight for most significant byte and mask for less significant ones.
+	chainIDBz := []byte{
+		byte(uint16(vaautils.ChainIDOsmosis) >> 8),
+		byte(uint16(vaautils.ChainIDWormchain) & 0xFF),
+	}
+	invalidPayload := make([]byte, 66)
+	copy(invalidPayload[:64], channelBz[:])
+	copy(invalidPayload[64:], chainIDBz)
+	packet.Payload = invalidPayload
+
+	// ACT
+	err = k.HandleIBCReceiverGovernancePacket(ctx, packet)
+
+	// ASSERT
+	require.Error(t, err, "expected error when governance malformed payload")
+	require.ErrorIs(t, err, types.ErrInvalidChain, "expected a different error")
+
+	// ARRANGE: Chain ID is not wormchain
+	chainIDBz = []byte{
+		byte(uint16(vaautils.ChainIDWormchain) >> 8),
+		byte(uint16(vaautils.ChainIDWormchain) & 0xFF),
+	}
+	validPayload := make([]byte, 66)
+	copy(validPayload[:64], channelBz[:])
+	copy(validPayload[64:], chainIDBz)
+	packet.Payload = validPayload
+
+	// ACT
+	err = k.HandleIBCReceiverGovernancePacket(ctx, packet)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the payload is valid")
+	channel, err := k.WormchainChannel.Get(ctx)
+	require.NoError(t, err, "expected non error retrieving the channel")
+	require.Equal(t, "channel-0", channel, "expected a different channel")
+}
 
 func TestGetPacketData(t *testing.T) {
 	// ARRANGE: Set default variable and does not initialize the state.
