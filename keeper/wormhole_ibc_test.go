@@ -18,40 +18,40 @@
 // MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT, AND
 // TITLE.
 
-package utils
+package keeper_test
 
 import (
-	"crypto/rand"
+	"testing"
 
-	"github.com/cometbft/cometbft/crypto/secp256k1"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/stretchr/testify/require"
+
+	"github.com/noble-assets/wormhole/types"
+	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
-func GenerateRandomBytes(n int) []byte {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		panic(err)
-	}
-	return b
-}
+func TestGetPacketData(t *testing.T) {
+	// ARRANGE: Set default variable and does not initialize the state.
+	ctx, k := mocks.WormholeKeeper(t)
+	message := []byte{}
+	nonce := uint32(0)
+	singer := ""
 
-type Address struct {
-	Bytes  []byte
-	Bech32 string
-}
+	// ACT
+	_, err := k.GetPacketData(ctx, message, nonce, singer)
 
-func TestAddress() Address {
-	key := secp256k1.GenPrivKey()
-	bytes := key.PubKey().Address().Bytes()
+	// ASSERT
+	require.Error(t, err, "expected an error")
+	require.ErrorContains(t, err, "failed to get config", "expected a different error")
 
-	return Address{
-		Bytes:  bytes,
-		Bech32: generateNobleAddress(bytes),
-	}
-}
+	// ARRANGE: Set empty config
+	cfg := types.Config{}
+	err = k.Config.Set(ctx, cfg)
+	require.NoError(t, err, "expected no error setting the config")
 
-func generateNobleAddress(bytes []byte) string {
-	address, _ := sdk.Bech32ifyAddressBytes("noble", bytes)
-	return address
+	// ACT
+	_, err = k.GetPacketData(ctx, message, nonce, singer)
+
+	// ASSERT
+	require.Error(t, err, "expected an error when signer is not valid")
+	require.ErrorContains(t, err, "failed to decode signer", "expected a different error")
 }

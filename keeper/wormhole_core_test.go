@@ -32,14 +32,15 @@ import (
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
-func TestParseAndVerifyVAA(t *testing.T) { // ARRANGE: Create environment
+func TestParseAndVerifyVAA(t *testing.T) {
+	// ARRANGE: Create environment
 	ctx, k := mocks.WormholeKeeper(t)
 
 	// ACT
 	_, err := k.ParseAndVerifyVAA(ctx, []byte{})
 
 	// ASSERT
-	require.Error(t, err, "expected error when config not set")
+	require.Error(t, err, "expected an error")
 	require.ErrorContains(t, err, "failed to unmarshal", "expected a different error")
 
 	// ARRANGE: Create a VAA already registered in the archive.

@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"fmt"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/collections/indexes"
