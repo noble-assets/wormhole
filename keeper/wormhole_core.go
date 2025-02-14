@@ -78,23 +78,12 @@ func (k *Keeper) ParseAndVerifyVAA(ctx context.Context, bz []byte) (*vaautils.VA
 
 func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.GovernancePacket) error {
 	switch pkt.Action {
-	case 2:
-		if len(pkt.Payload) < 5 {
-			return types.ErrMalformedPayload
-		}
+	case uint8(vaautils.ActionGuardianSetUpdate):
 
-		index := binary.BigEndian.Uint32(pkt.Payload[0:4])
-
-		length := int(pkt.Payload[4:5][0])
-		if len(pkt.Payload[5:]) != 20*length {
-			return types.ErrMalformedPayload
-		}
-
-		offset := 5
-		addresses := make([][]byte, length)
-		for i := range length {
-			addresses[i] = pkt.Payload[offset : offset+20]
-			offset += 20
+		var guardianSetUpgrade types.GuardianSetUpgrade
+		err := guardianSetUpgrade.Parse(pkt.Payload)
+		if err != nil {
+			return err
 		}
 
 		cfg, err := k.Config.Get(ctx)
@@ -103,8 +92,8 @@ func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.Gover
 		}
 
 		oldIndex := cfg.GuardianSetIndex
-		if index != oldIndex+1 {
-			return fmt.Errorf("invalid guardian set index: expected %d, got %d", oldIndex+1, index)
+		if guardianSetUpgrade.NewGuardianSetIndex != oldIndex+1 {
+			return fmt.Errorf("invalid guardian set index: expected %d, got %d", oldIndex+1, guardianSetUpgrade.NewGuardianSetIndex)
 		}
 
 		oldGuardianSet, err := k.GuardianSets.Get(ctx, oldIndex)
@@ -118,13 +107,11 @@ func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.Gover
 		if err != nil {
 			return errors.Wrap(err, "failed to set old guardian set in state")
 		}
-		err = k.GuardianSets.Set(ctx, index, types.GuardianSet{
-			Addresses:      addresses,
-			ExpirationTime: 0,
-		})
+		err = k.GuardianSets.Set(ctx, guardianSetUpgrade.NewGuardianSetIndex, guardianSetUpgrade.NewGuardianSet)
 		if err != nil {
 			return errors.Wrap(err, "failed to set new guardian set in state")
 		}
+
 		cfg.GuardianSetIndex += 1
 		err = k.Config.Set(ctx, cfg)
 		if err != nil {
@@ -133,7 +120,7 @@ func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.Gover
 
 		return k.eventService.EventManager(ctx).EmitKV(ctx, "GuardianSetUpgrade",
 			event.Attribute{Key: "old", Value: strconv.Itoa(int(oldIndex))},
-			event.Attribute{Key: "new", Value: strconv.Itoa(int(index))},
+			event.Attribute{Key: "new", Value: strconv.Itoa(int(cfg.GuardianSetIndex))},
 		)
 	default:
 		return errors.Wrapf(types.ErrUnsupportedGovernanceAction, "module: %s, type: %d", pkt.Module, pkt.Action)

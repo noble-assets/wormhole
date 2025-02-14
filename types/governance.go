@@ -26,6 +26,8 @@ import (
 	"errors"
 )
 
+const AddressLenght = 20
+
 // GovernancePacket defines the expected payload of a Governance VAA.
 type GovernancePacket struct {
 	Module  string
@@ -43,6 +45,37 @@ func (pkt *GovernancePacket) Parse(bz []byte) error {
 	pkt.Action = bz[32:33][0]
 	pkt.Chain = binary.BigEndian.Uint16(bz[33:35])
 	pkt.Payload = bz[35:]
+
+	return nil
+}
+
+type GuardianSetUpgrade struct {
+	NewGuardianSetIndex uint32
+	NewGuardianSet      GuardianSet
+}
+
+func (p *GuardianSetUpgrade) Parse(payload []byte) error {
+	if len(payload) < 5 {
+		return ErrMalformedPayload
+	}
+
+	newGuardianSetIndex := binary.BigEndian.Uint32(payload[0:4])
+
+	newGuardianSetLength := int(payload[4:5][0])
+
+	if len(payload[5:]) != AddressLenght*newGuardianSetLength {
+		return ErrMalformedPayload
+	}
+
+	// Offset is given by the 4 bytes of the new index + the single byte of the guardian set lenght.
+	offset := 5
+	addresses := make([][]byte, newGuardianSetLength)
+	for i := range newGuardianSetLength {
+		addresses[i] = payload[offset : offset+20]
+		offset += 20
+	}
+
+	p.NewGuardianSetIndex = newGuardianSetIndex
 
 	return nil
 }
