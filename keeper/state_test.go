@@ -127,7 +127,7 @@ func TestGetSequences(t *testing.T) {
 	require.NoError(t, err, "the getter does not return errors")
 	require.Empty(t, sequences, "expected empty map")
 
-	// ARRANGE: Add another with 20 bytes.
+	// ARRANGE: Add another with 32 bytes.
 	adddress2 := utils.GenerateRandomBytes(32)
 
 	err = k.Sequences.Set(ctx, adddress2, 1)
