@@ -23,7 +23,9 @@ package mocks
 import (
 	"fmt"
 	"testing"
+	"time"
 
+	"cosmossdk.io/core/header"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
@@ -68,7 +70,8 @@ func NewWormholeKeeper(t testing.TB, ics4Wrapper types.ICS4Wrapper, portKeeper t
 		scopeKeeper,
 	)
 
-	return wrapper.Ctx, k
+	ctx := wrapper.Ctx.WithHeaderInfo(header.Info{Time: time.Now().UTC()})
+	return ctx, k
 }
 
 // MakeTestEncodingConfig is a modified testutil.MakeTestEncodingConfig that

@@ -52,7 +52,7 @@ func CreateVAA(t *testing.T, guardians []Guardian, payload string, sequence uint
 		Payload:   []byte(payload),
 		Sequence:  sequence,
 		Version:   vaautils.SupportedVAAVersion,
-		Timestamp: time.Now().UTC().Local().Local().Truncate(time.Second),
+		Timestamp: time.Now().Local().Truncate(time.Second),
 	}
 
 	var guardianAddresses []common.Address
