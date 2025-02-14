@@ -31,7 +31,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	// ARRANGE: Create environment and nil request.
+	// ARRANGE
 	ctx, k := mocks.WormholeKeeper(t)
 	qs := keeper.NewQueryServer(k)
 
@@ -43,7 +43,7 @@ func TestConfig(t *testing.T) {
 	require.ErrorIs(t, err, types.ErrInvalidRequest, "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
-	// ARRANGE: Request not nil, but empty state
+	// ARRANGE
 	req := types.QueryConfig{}
 
 	// ACT
@@ -54,7 +54,7 @@ func TestConfig(t *testing.T) {
 	require.ErrorContains(t, err, "unable to get config", "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
-	// ARRANGE: Add config to the state.
+	// ARRANGE
 	cfg := types.Config{
 		ChainId:          1,
 		GuardianSetIndex: 2,
@@ -73,4 +73,41 @@ func TestConfig(t *testing.T) {
 	require.Equal(t, cfg.GuardianSetIndex, resp.Config.GuardianSetIndex, "expected a different guardian set index")
 	require.Equal(t, cfg.GovChain, resp.Config.GovChain, "expected a different gov chain")
 	require.Equal(t, cfg.GovAddress, resp.Config.GovAddress, "expected a different gov address")
+}
+
+func TestWormchainChannel(t *testing.T) {
+	// ARRANGE: Create environment and nil request.
+	ctx, k := mocks.WormholeKeeper(t)
+	qs := keeper.NewQueryServer(k)
+
+	// ACT
+	resp, err := qs.WormchainChannel(ctx, nil)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the request is nil")
+	require.ErrorIs(t, err, types.ErrInvalidRequest, "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req := types.QueryWormchainChannel{}
+
+	// ACT
+	resp, err = qs.WormchainChannel(ctx, &req)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the request is nil")
+	require.ErrorContains(t, err, "wormchain channel not configured in state", "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	wormchainChannel := "channel-0"
+	err = k.WormchainChannel.Set(ctx, wormchainChannel)
+	require.NoError(t, err, "expected no error setting the wormchain channel")
+
+	// ACT
+	resp, err = qs.WormchainChannel(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the request is valid and channel is set")
+	require.Equal(t, wormchainChannel, resp.WormchainChannel, "expected a different channel")
 }
