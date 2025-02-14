@@ -29,10 +29,37 @@ import (
 
 	"cosmossdk.io/core/event"
 	"cosmossdk.io/errors"
-	"github.com/wormhole-foundation/wormhole/sdk/vaa"
+	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
 	"github.com/noble-assets/wormhole/types"
 )
+
+func (k *Keeper) HandleIBCReceiverGovernancePacket(ctx context.Context, pkt types.GovernancePacket) error {
+	switch pkt.Action {
+	case uint8(vaautils.IbcReceiverActionUpdateChannelChain):
+		if len(pkt.Payload) != 66 {
+			return types.ErrMalformedPayload
+		}
+
+		channel := string(bytes.TrimLeft(pkt.Payload[0:64], "\x00"))
+		chain := binary.BigEndian.Uint16(pkt.Payload[64:66])
+
+		if chain != uint16(vaautils.ChainIDWormchain) {
+			return types.ErrInvalidChannel
+		}
+
+		if err := k.WormchainChannel.Set(ctx, channel); err != nil {
+			return errors.Wrap(err, "failed to set wormchain channel in state")
+		}
+
+		return k.eventService.EventManager(ctx).EmitKV(ctx, "UpdateChannelChain",
+			event.Attribute{Key: "chain_id", Value: strconv.Itoa(int(chain))},
+			event.Attribute{Key: "channel_id", Value: channel},
+		)
+	default:
+		return errors.Wrapf(types.ErrUnsupportedGovernanceAction, "module: %s, type: %d", pkt.Module, pkt.Action)
+	}
+}
 
 func (k *Keeper) GetPacketData(ctx context.Context, message []byte, nonce uint32, signer string) (*types.PacketData, error) {
 	config, err := k.Config.Get(ctx)
@@ -96,31 +123,4 @@ func (k *Keeper) GetPacketData(ctx context.Context, message []byte, nonce uint32
 			},
 		}),
 	}, nil
-}
-
-func (k *Keeper) HandleIBCReceiverGovernancePacket(ctx context.Context, pkt types.GovernancePacket) error {
-	switch pkt.Action {
-	case 1:
-		if len(pkt.Payload) != 66 {
-			return types.ErrMalformedPayload
-		}
-
-		channel := string(bytes.TrimLeft(pkt.Payload[0:64], "\x00"))
-		chain := binary.BigEndian.Uint16(pkt.Payload[64:66])
-
-		if chain != uint16(vaa.ChainIDWormchain) {
-			return types.ErrInvalidChannel
-		}
-
-		if err := k.WormchainChannel.Set(ctx, channel); err != nil {
-			return errors.Wrap(err, "failed to set wormchain channel in state")
-		}
-
-		return k.eventService.EventManager(ctx).EmitKV(ctx, "UpdateChannelChain",
-			event.Attribute{Key: "chain_id", Value: strconv.Itoa(int(chain))},
-			event.Attribute{Key: "channel_id", Value: channel},
-		)
-	default:
-		return errors.Wrapf(types.ErrUnsupportedGovernanceAction, "module: %s, type: %d", pkt.Module, pkt.Action)
-	}
 }

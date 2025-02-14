@@ -21,11 +21,16 @@
 package keeper_test
 
 import (
+	"encoding/hex"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
 	"github.com/noble-assets/wormhole/types"
+	"github.com/noble-assets/wormhole/utils"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
@@ -34,10 +39,9 @@ func TestGetPacketData(t *testing.T) {
 	ctx, k := mocks.WormholeKeeper(t)
 	message := []byte{}
 	nonce := uint32(0)
-	singer := ""
 
 	// ACT
-	_, err := k.GetPacketData(ctx, message, nonce, singer)
+	_, err := k.GetPacketData(ctx, message, nonce, "")
 
 	// ASSERT
 	require.Error(t, err, "expected an error")
@@ -49,9 +53,48 @@ func TestGetPacketData(t *testing.T) {
 	require.NoError(t, err, "expected no error setting the config")
 
 	// ACT
-	_, err = k.GetPacketData(ctx, message, nonce, singer)
+	_, err = k.GetPacketData(ctx, message, nonce, "")
 
 	// ASSERT
 	require.Error(t, err, "expected an error when signer is not valid")
 	require.ErrorContains(t, err, "failed to decode signer", "expected a different error")
+
+	// ARRANGE: Create an invalid signer
+	signer := utils.TestAddress()
+	invalidSigner := strings.Join([]string{"cosmos", strings.Split(signer.Bech32, "noble")[1]}, "")
+
+	// ACT
+	_, err = k.GetPacketData(ctx, message, nonce, invalidSigner)
+
+	// ASSERT
+	require.Error(t, err, "expected an error when the address is not valid for the codec")
+	require.ErrorContains(t, err, "failed to decode signer address", "expected a different error")
+
+	// ARRANGE: Add more information to the state to better test the valid case
+	cfg = types.Config{
+		ChainId: uint16(3),
+	}
+	err = k.Config.Set(ctx, cfg)
+	require.NoError(t, err, "expected no error setting the config")
+
+	// ACT: Call with valid signer now
+	message = []byte("Hello from Noble")
+	resp, err := k.GetPacketData(ctx, message, nonce, signer.Bech32)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the signer is valid")
+
+	emitter := make([]byte, 32)
+	copy(emitter[12:], signer.Bytes)
+	s, err := k.Sequences.Get(ctx, emitter)
+	require.NoError(t, err, "expected no error getting the updated sequence")
+	require.Equal(t, uint64(1), s, "expected 1 for a previously not existent key")
+
+	require.Len(t, resp.Publish.Msg, 6, "expected a different number of messages")
+	require.Equal(t, hex.EncodeToString(message), resp.Publish.Msg[0].Value, "expected a different message")
+	require.Equal(t, hex.EncodeToString(emitter), resp.Publish.Msg[1].Value, "expected a different emitter")
+	require.Equal(t, "3", resp.Publish.Msg[2].Value, "expected a different chain ID")
+	require.Equal(t, "0", resp.Publish.Msg[3].Value, "expected a different nonce")
+	require.Equal(t, "0", resp.Publish.Msg[4].Value, "expected a different sequence")
+	require.Equal(t, strconv.Itoa(int(time.Now().Truncate(time.Second).Unix())), resp.Publish.Msg[5].Value, "expected a different timestamp")
 }
