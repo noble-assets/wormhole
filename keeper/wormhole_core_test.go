@@ -22,9 +22,12 @@ package keeper_test
 
 import (
 	"testing"
+	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
+	"github.com/noble-assets/wormhole/keeper"
 	"github.com/noble-assets/wormhole/types"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
@@ -118,14 +121,25 @@ func TestHandleCoreGovernancePacket(t *testing.T) {
 	// ACT
 	err = k.HandleCoreGovernancePacket(ctx, packet)
 
-	// ASSERT
+	// ASSERT: Set valid guardian index but don't populate the state with old guardian set.
 	require.Error(t, err, "expected error when guardian set index is not valid")
 	require.ErrorContains(t, err, "invalid guardian set index", "expected a different error")
 
-	// ARRANGE: Set the governance with an index that makes fail the payload
+	// ARRANGE
 	cfg.GuardianSetIndex = 0
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
+
+	// ACT
+	err = k.HandleCoreGovernancePacket(ctx, packet)
+
+	// ASSERT
+	require.Error(t, err, "expected expected an error when no old guardian set is present")
+	require.ErrorContains(t, err, "failed to get old guardian set", "expected a different error")
+
+	// ARRANGE: Set empty guardian state to the store
+	err = k.GuardianSets.Set(ctx, 0, types.GuardianSet{})
+	require.NoError(t, err, "expected no error setting the old guardian set")
 
 	// ACT
 	err = k.HandleCoreGovernancePacket(ctx, packet)
@@ -137,6 +151,15 @@ func TestHandleCoreGovernancePacket(t *testing.T) {
 	require.NoError(t, err, "expected no error reading the config")
 	require.Equal(t, uint32(1), respCfg.GuardianSetIndex, "expected a different guardian set index")
 
+	// Check old guardian set
+	respOldGuardianSet, err := k.GuardianSets.Get(ctx, 0)
+	require.NoError(t, err, "expected no error reading the old guardian set")
+	println("Time from ctx :", uint64(sdk.UnwrapSDKContext(ctx).HeaderInfo().Time.Unix()))
+	println("Time in tests: ", time.Now().Truncate(time.Second).Unix())
+	expTime := uint64(time.Now().Truncate(time.Second).Unix()) + keeper.GuardianSetExpiry
+	require.Equal(t, expTime, respOldGuardianSet.ExpirationTime, "expected a different timestamp for old guardian set")
+
+	// Check updated guardian set.
 	respGuardianSet, err := k.GuardianSets.Get(ctx, 1)
 	require.NoError(t, err, "expected no error reading the guardian set")
 	require.Len(t, respGuardianSet.Addresses, 2, "expected a different number of addresses in the set")

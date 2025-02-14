@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"cosmossdk.io/collections"
 	collcodec "cosmossdk.io/collections/codec"
@@ -37,7 +36,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	"github.com/cosmos/ibc-go/v8/modules/core/24-host"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
 	"github.com/ethereum/go-ethereum/common"
 	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
