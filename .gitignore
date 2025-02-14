@@ -2,3 +2,4 @@
 .idea
 build
 e2e/relayer/config
+coverage.out

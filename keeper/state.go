@@ -58,15 +58,16 @@ func (k *Keeper) GetGuardianSets(ctx context.Context) (map[uint32]types.Guardian
 func (k *Keeper) GetSequences(ctx context.Context) (map[string]uint64, error) {
 	sequences := make(map[string]uint64)
 
+	// NOTE: As this function is only used when exporting state for genesis, we
+	// can safely not return an error when certain entries is malformed.
 	err := k.Sequences.Walk(ctx, nil, func(sender []byte, sequence uint64) (stop bool, err error) {
-		// NOTE: This assumes that addresses contain 20 bytes.
-		address, err := k.addressCodec.BytesToString(sender[12:])
-		if err != nil {
-			// NOTE: We continue in the case of an encoding error.
-			return false, err
+		if len(sender) == 32 {
+			address, err := k.addressCodec.BytesToString(sender[12:])
+			if err == nil {
+				sequences[address] = sequence
+			}
 		}
 
-		sequences[address] = sequence
 		return false, nil
 	})
 
