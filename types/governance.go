@@ -26,8 +26,6 @@ import (
 	"errors"
 )
 
-const AddressLenght = 20
-
 // GovernancePacket defines the expected payload of a Governance VAA.
 type GovernancePacket struct {
 	Module  string

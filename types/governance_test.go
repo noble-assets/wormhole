@@ -32,9 +32,11 @@ import (
 
 func TestUpdateChannelChain_Parse(t *testing.T) {
 	channelBz, err := vaautils.LeftPadIbcChannelId("channel-0")
-	chainID := uint16(vaautils.ChainIDNoble)
 	// Shift left by eight for most significant byte and mask for less significant ones.
-	chainIDBz := []byte{byte(chainID >> 8), byte(chainID & 0xFF)}
+	chainIDBz := []byte{
+		byte(uint16(vaautils.ChainIDWormchain) >> 8),
+		byte(uint16(vaautils.ChainIDWormchain) & 0xFF),
+	}
 	validPayload := make([]byte, 66)
 	copy(validPayload[:64], channelBz[:])
 	copy(validPayload[64:], chainIDBz)

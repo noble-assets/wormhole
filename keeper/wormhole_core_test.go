@@ -27,7 +27,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/noble-assets/wormhole/keeper"
 	"github.com/noble-assets/wormhole/types"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
@@ -156,7 +155,7 @@ func TestHandleCoreGovernancePacket(t *testing.T) {
 	require.NoError(t, err, "expected no error reading the old guardian set")
 	println("Time from ctx :", uint64(sdk.UnwrapSDKContext(ctx).HeaderInfo().Time.Unix()))
 	println("Time in tests: ", time.Now().Truncate(time.Second).Unix())
-	expTime := uint64(time.Now().Truncate(time.Second).Unix()) + keeper.GuardianSetExpiry
+	expTime := uint64(time.Now().Truncate(time.Second).Unix()) + types.GuardianSetExpiry
 	require.Equal(t, expTime, respOldGuardianSet.ExpirationTime, "expected a different timestamp for old guardian set")
 
 	// Check updated guardian set.
