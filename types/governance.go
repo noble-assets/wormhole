@@ -49,12 +49,13 @@ func (pkt *GovernancePacket) Parse(bz []byte) error {
 	return nil
 }
 
-type GuardianSetUpgrade struct {
+// GuardianSetUpdate represents the governance action to update the guardian set.
+type GuardianSetUpdate struct {
 	NewGuardianSetIndex uint32
 	NewGuardianSet      GuardianSet
 }
 
-func (p *GuardianSetUpgrade) Parse(payload []byte) error {
+func (a *GuardianSetUpdate) Parse(payload []byte) error {
 	if len(payload) < 5 {
 		return ErrMalformedPayload
 	}
@@ -75,9 +76,27 @@ func (p *GuardianSetUpgrade) Parse(payload []byte) error {
 		offset += 20
 	}
 
-	p.NewGuardianSetIndex = newGuardianSetIndex
-	p.NewGuardianSet.Addresses = addresses
-	p.NewGuardianSet.ExpirationTime = 0
+	a.NewGuardianSetIndex = newGuardianSetIndex
+	a.NewGuardianSet.Addresses = addresses
+	a.NewGuardianSet.ExpirationTime = 0
+
+	return nil
+}
+
+// UpdateChannelChain represents the governance action to update the IBC
+// channel associated with a chain.
+type UpdateChannelChain struct {
+	ChannelID []byte
+	Chain     uint16
+}
+
+func (a *UpdateChannelChain) Parse(payload []byte) error {
+	if len(payload) != 66 {
+		return ErrMalformedPayload
+	}
+
+	a.ChannelID = bytes.TrimLeft(payload[0:64], "\x00")
+	a.Chain = binary.BigEndian.Uint16(payload[64:66])
 
 	return nil
 }

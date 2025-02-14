@@ -24,9 +24,69 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
 	"github.com/noble-assets/wormhole/types"
+	"github.com/noble-assets/wormhole/utils"
 )
+
+func TestUpdateChannelChain_Parse(t *testing.T) {
+	channelBz, err := vaautils.LeftPadIbcChannelId("channel-0")
+	chainID := uint16(vaautils.ChainIDNoble)
+	// Shift left by eight for most significant byte and mask for less significant ones.
+	chainIDBz := []byte{byte(chainID >> 8), byte(chainID & 0xFF)}
+	validPayload := make([]byte, 66)
+	copy(validPayload[:64], channelBz[:])
+	copy(validPayload[64:], chainIDBz)
+
+	require.NoError(t, err, "expected no error padding the channel")
+
+	testCases := []struct {
+		name              string
+		payload           []byte
+		expectedChannelID []byte
+		expectedChain     uint16
+		errorContains     string
+	}{
+		{
+			"fail when payload is empty",
+			[]byte{},
+			[]byte{},
+			0,
+			"payload is malformed",
+		},
+		{
+			"fail when payload is less than 66",
+			utils.GenerateRandomBytes(65),
+			[]byte{},
+			0,
+			"payload is malformed",
+		},
+		{
+			"successful when payload is valid",
+			validPayload,
+			[]byte("channel-0"),
+			uint16(vaautils.ChainIDNoble),
+			"",
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.name, func(t *testing.T) {
+			var updateChannelChain types.UpdateChannelChain
+			err := updateChannelChain.Parse(tC.payload)
+
+			if tC.errorContains != "" {
+				require.Error(t, err, "expected an error")
+				require.ErrorContains(t, err, tC.errorContains, "expected a different error")
+			} else {
+				require.NoError(t, err, "expected no error")
+				require.Equal(t, tC.expectedChain, updateChannelChain.Chain, "expected different chain")
+				require.Equal(t, tC.expectedChannelID, updateChannelChain.ChannelID, "expected different channel ID")
+			}
+		})
+	}
+}
 
 func TestGuardianSetUpgrade_Parse(t *testing.T) {
 	testCases := []struct {
@@ -86,7 +146,7 @@ func TestGuardianSetUpgrade_Parse(t *testing.T) {
 
 	for _, tC := range testCases {
 		t.Run(tC.name, func(t *testing.T) {
-			var guardianSetUpgrade types.GuardianSetUpgrade
+			var guardianSetUpgrade types.GuardianSetUpdate
 			err := guardianSetUpgrade.Parse(tC.payload)
 
 			if tC.errorContains != "" {
@@ -95,6 +155,8 @@ func TestGuardianSetUpgrade_Parse(t *testing.T) {
 			} else {
 				require.NoError(t, err, "expected no error")
 				require.Equal(t, tC.expectedIndex, guardianSetUpgrade.NewGuardianSetIndex, "expected different guardian set index")
+				require.Len(t, guardianSetUpgrade.NewGuardianSet.Addresses, int(tC.expectedAddressLenght), "expected a different number of addresses")
+				require.Equal(t, tC.exppectedExpirationTime, guardianSetUpgrade.NewGuardianSet.ExpirationTime, "expected a different expiration time")
 			}
 		})
 	}
