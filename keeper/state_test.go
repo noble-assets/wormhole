@@ -114,47 +114,31 @@ func TestGetSequences(t *testing.T) {
 	require.NoError(t, err, "expected no error when no sequences are registered")
 	require.Empty(t, sequences, "expected empty map")
 
-	// ARRANGE: Add addresses with less than 20 bytes
-	adddress1 := []byte("1123456789")
+	// ARRANGE: Add addresses with less than 32 bytes
+	adddress1 := utils.GenerateRandomBytes(31)
 
 	err = k.Sequences.Set(ctx, adddress1, 0)
-	require.NoError(t, err, "expected no error setting the sequence")
+	require.NoError(t, err, "expected no error setting the sequence for address 1")
 
 	// ACT
 	sequences, err = k.GetSequences(ctx)
 
 	// ASSERT
-	require.Error(t, err, "expected an error when an address is less than 20 bytes")
-	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
+	require.NoError(t, err, "the getter does not return errors")
 	require.Empty(t, sequences, "expected empty map")
 
 	// ARRANGE: Add another with 20 bytes.
-	adddress2 := []byte("1123456789ABCDEF0123")
+	adddress2 := utils.GenerateRandomBytes(32)
 
 	err = k.Sequences.Set(ctx, adddress2, 1)
-	require.NoError(t, err, "expected no error setting the sequence")
+	require.NoError(t, err, "expected no error setting the sequence for address 2")
 
 	// ACT
 	sequences, err = k.GetSequences(ctx)
 
 	// ASSERT
-	require.Error(t, err, "expected an error because the invalid sender is still in the map")
-	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
-	require.Len(t, sequences, 0, "expected the map to be still empty")
-
-	// ARRANGE: Add another with 20 bytes.
-	adddress3 := []byte("0123456789ABCDEF0123")
-
-	err = k.Sequences.Set(ctx, adddress3, 1)
-	require.NoError(t, err, "expected no error setting the sequence")
-
-	// ACT
-	sequences, err = k.GetSequences(ctx)
-
-	// ASSERT
-	require.Error(t, err, "expected an error because the invalid sender is still in the map")
-	require.ErrorContains(t, err, "address with less than 20 bytes", "expected a different error")
-	require.Len(t, sequences, 1, "expected one item in the map because handled before the error")
+	require.NoError(t, err, "the getter does not return errors")
+	require.Len(t, sequences, 1, "expected the map to have only the valid address")
 }
 
 func TestGetVAAArchive(t *testing.T) {

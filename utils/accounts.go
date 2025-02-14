@@ -21,12 +21,12 @@
 package utils
 
 import (
-	crand "crypto/rand"
+	"crypto/rand"
 )
 
 func GenerateRandomBytes(n int) []byte {
 	b := make([]byte, n)
-	_, err := crand.Read(b)
+	_, err := rand.Read(b)
 	if err != nil {
 		panic(err)
 	}

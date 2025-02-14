@@ -24,7 +24,6 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
-	"fmt"
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/collections/indexes"
@@ -59,18 +58,16 @@ func (k *Keeper) GetGuardianSets(ctx context.Context) (map[uint32]types.Guardian
 func (k *Keeper) GetSequences(ctx context.Context) (map[string]uint64, error) {
 	sequences := make(map[string]uint64)
 
+	// NOTE: the walk function is not returning an error to be able to export the state even if
+	// some data is not valid.
 	err := k.Sequences.Walk(ctx, nil, func(sender []byte, sequence uint64) (stop bool, err error) {
-		if len(sender) < 20 {
-			return false, fmt.Errorf("address with less than 20 bytes: %s", sender)
+		if len(sender) == 32 {
+			address, err := k.addressCodec.BytesToString(sender[12:])
+			if err == nil {
+				sequences[address] = sequence
+			}
 		}
 
-		address, err := k.addressCodec.BytesToString(sender[12:])
-		if err != nil {
-			// NOTE: We continue in the case of an encoding error.
-			return false, err
-		}
-
-		sequences[address] = sequence
 		return false, nil
 	})
 
