@@ -23,10 +23,13 @@ package keeper_test
 import (
 	"testing"
 
+	"cosmossdk.io/collections"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 
 	"github.com/noble-assets/wormhole/keeper"
 	"github.com/noble-assets/wormhole/types"
+	"github.com/noble-assets/wormhole/utils"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
@@ -280,4 +283,82 @@ func TestGuardianSet(t *testing.T) {
 	// ASSERT
 	require.NoError(t, err, "expected no error when the guardian set associated with the current index exists")
 	require.Equal(t, set, resp.GuardianSet, "expected a different set")
+}
+
+func TestExecutedVAA(t *testing.T) {
+	// ARRANGE
+	ctx, k := mocks.WormholeKeeper(t)
+	qs := keeper.NewQueryServer(k)
+
+	// ACT
+	resp, err := qs.ExecutedVAA(ctx, nil)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the request is nil")
+	require.ErrorIs(t, err, types.ErrInvalidRequest, "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req := types.QueryExecutedVAA{InputType: "wrong"}
+
+	// ACT
+	resp, err = qs.ExecutedVAA(ctx, &req)
+
+	// ASSERT
+	require.Error(t, err, "expected error when the input type is not allowed")
+	require.ErrorContains(t, err, "invalid input type", "expected a different error")
+	require.Nil(t, resp, "expected nil response")
+
+	// ARRANGE
+	req = types.QueryExecutedVAA{InputType: ""}
+
+	// ACT
+	resp, err = qs.ExecutedVAA(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the input is not a valid digest")
+	require.False(t, resp.Executed, "expected no vaa in executed")
+
+	// ARRANGE
+	vaa := utils.CreateVAA(t, []utils.Guardian{utils.GuardianSigner()}, "valid", 0)
+	digest := vaa.SigningDigest().Bytes()
+	req = types.QueryExecutedVAA{InputType: "", Input: common.Bytes2Hex(digest)}
+
+	// ACT
+	resp, err = qs.ExecutedVAA(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when req is valid but archive is empty")
+	require.False(t, resp.Executed, "expected no vaa in executed")
+
+	// ARRANGE
+	err = k.VAAArchive.Set(ctx, digest, collections.Join(vaa.MessageID(), true))
+	require.NoError(t, err, "expected no error setting the vaa")
+
+	// ACT
+	resp, err = qs.ExecutedVAA(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err)
+	require.True(t, resp.Executed, "expected the vaa to be found via digest")
+
+	// ARRANGE
+	req = types.QueryExecutedVAA{InputType: "id", Input: "id"}
+
+	// ACT
+	resp, err = qs.ExecutedVAA(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the id is not in the archive")
+	require.False(t, resp.Executed, "expected no vaa")
+
+	// ARRANGE
+	req = types.QueryExecutedVAA{InputType: "id", Input: vaa.MessageID()}
+
+	// ACT
+	resp, err = qs.ExecutedVAA(ctx, &req)
+
+	// ASSERT
+	require.NoError(t, err)
+	require.True(t, resp.Executed, "expected the vaa to be found via id")
 }

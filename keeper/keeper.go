@@ -53,9 +53,7 @@ type Keeper struct {
 	WormchainChannel collections.Item[string]
 	GuardianSets     collections.Map[uint32, types.GuardianSet]
 	Sequences        collections.Map[[]byte, uint64]
-	// TODO: what is the purpose of the bool?
-	// VAAArchive is used to store the touple (VAA message ID, ???) indexed by the hash of the VAA.
-	VAAArchive *collections.IndexedMap[[]byte, collections.Pair[string, bool], VAAArchiveIndexes]
+	VAAArchive       *collections.IndexedMap[[]byte, collections.Pair[string, bool], VAAArchiveIndexes]
 
 	ics4Wrapper  types.ICS4Wrapper
 	portKeeper   types.PortKeeper
@@ -178,7 +176,6 @@ func (k *Keeper) ParseAndVerifyVAA(ctx context.Context, bz []byte) (*vaautils.VA
 	}
 
 	blockTime := uint64(k.headerService.GetHeaderInfo(ctx).Time.Unix())
-	// TODO: is zero a no expiration?
 	if guardianSet.ExpirationTime != 0 && guardianSet.ExpirationTime < blockTime {
 		return nil, fmt.Errorf("guardian set %d is expired", vaa.GuardianSetIndex)
 	}
