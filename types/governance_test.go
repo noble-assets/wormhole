@@ -32,6 +32,7 @@ import (
 
 func TestUpdateChannelChain_Parse(t *testing.T) {
 	channelBz, err := vaautils.LeftPadIbcChannelId("channel-0")
+	require.NoError(t, err)
 	// Shift left by eight for most significant byte and mask for less significant ones.
 	chainIDBz := []byte{
 		byte(uint16(vaautils.ChainIDWormchain) >> 8),
