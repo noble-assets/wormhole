@@ -27,6 +27,7 @@ import (
 	"testing"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/stretchr/testify/require"
 	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
@@ -170,5 +171,6 @@ func TestGetPacketData(t *testing.T) {
 	require.Equal(t, "3", resp.Publish.Msg[2].Value, "expected a different chain ID")
 	require.Equal(t, "0", resp.Publish.Msg[3].Value, "expected a different nonce")
 	require.Equal(t, "0", resp.Publish.Msg[4].Value, "expected a different sequence")
-	require.Equal(t, strconv.Itoa(int(time.Now().Truncate(time.Second).Unix())), resp.Publish.Msg[5].Value, "expected a different timestamp")
+	headerTime := sdk.UnwrapSDKContext(ctx).HeaderInfo().Time.Truncate(time.Second).Unix()
+	require.Equal(t, strconv.Itoa(int(headerTime)), resp.Publish.Msg[5].Value, "expected a different timestamp")
 }
