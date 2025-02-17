@@ -33,7 +33,7 @@ func (app *SimApp) RegisterLegacyModules() error {
 		"noble1vvn7s88yj02ktwwckdzvtz64fvengfsjtwejck",
 	)
 
-	app.WormholeKeeper.SetIBCKeepers(app.IBCKeeper.ChannelKeeper)
+	app.WormholeKeeper.SetICS4Wrapper(app.IBCKeeper.ChannelKeeper)
 
 	router := porttypes.NewRouter()
 	router.AddRoute(types.ModuleName, wormhole.NewIBCModule(app.WormholeKeeper))

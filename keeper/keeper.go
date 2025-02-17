@@ -93,9 +93,9 @@ func NewKeeper(
 	return keeper
 }
 
-// SetIBCKeepers overrides the provided IBC specific keepers for this module.
+// SetICS4Wrapper overrides the provided ICS4 wrapper for this module.
 // This exists because IBC doesn't support dependency injection.
-func (k *Keeper) SetIBCKeepers(ics4Wrapper types.ICS4Wrapper) {
+func (k *Keeper) SetICS4Wrapper(ics4Wrapper types.ICS4Wrapper) {
 	k.ics4Wrapper = ics4Wrapper
 }
 
