@@ -50,8 +50,11 @@ func (pkt *GovernancePacket) Parse(bz []byte) error {
 func (pkt *GovernancePacket) Serialize() []byte {
 	buf := make([]byte, 35+len(pkt.Payload))
 
+	moduleBz := []byte(pkt.Module)
 	copy(buf[0:32], make([]byte, 32))
-	copy(buf[0:32], []byte(pkt.Module))
+	if len(moduleBz) < 32 {
+		copy(buf[32-len(moduleBz):], moduleBz) // Right-pad with 0x00
+	}
 
 	buf[32] = pkt.Action
 

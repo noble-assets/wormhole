@@ -91,7 +91,7 @@ func TestUpdateChannelChain_Parse(t *testing.T) {
 	}
 }
 
-func TestGuardianSetUpgrade_Parse(t *testing.T) {
+func TestGuardianSetUpdate_Parse(t *testing.T) {
 	testCases := []struct {
 		name                    string
 		payload                 []byte
