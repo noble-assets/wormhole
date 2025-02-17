@@ -47,7 +47,14 @@ func TestParseAndVerifyVAA(t *testing.T) {
 
 	// ARRANGE: Create a VAA already registered in the archive.
 	guardian := utils.GuardianSigner()
-	vaa1 := utils.CreateVAA(t, []utils.Guardian{guardian}, "first test vaa", 1)
+	vaaBody := utils.VAABody{
+		GuardianSetIndex: 0,
+		Payload:          []byte("first test vaa"),
+		Sequence:         1,
+		EmitterChain:     0,
+		EmitterAddress:   [32]byte{},
+	}
+	vaa1 := utils.CreateVAA(t, []utils.Guardian{guardian}, vaaBody)
 	hash1 := vaa1.SigningDigest().Bytes()
 	err = k.VAAArchive.Set(ctx, hash1, collections.Join(vaa1.MessageID(), true))
 	require.NoError(t, err, "expected no error setting the vaa in the archive")
@@ -109,7 +116,14 @@ func TestParseAndVerifyVAA(t *testing.T) {
 	require.ErrorContains(t, err, "failed to verify", "expected a different error")
 
 	// ARRANGE: VAA is valid.
-	vaa2 := utils.CreateVAA(t, []utils.Guardian{guardian}, "second test vaa", 1)
+	vaaBody = utils.VAABody{
+		GuardianSetIndex: 0,
+		Payload:          []byte("second test vaa"),
+		Sequence:         1,
+		EmitterChain:     0,
+		EmitterAddress:   [32]byte{},
+	}
+	vaa2 := utils.CreateVAA(t, []utils.Guardian{guardian}, vaaBody)
 	bzVaa2, err := vaa2.Marshal()
 	require.NoError(t, err, "expected no error marshaling the vaa")
 	guardianSet = types.GuardianSet{

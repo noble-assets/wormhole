@@ -47,10 +47,22 @@ func GuardianSigner() Guardian {
 	}
 }
 
-func CreateVAA(t *testing.T, guardians []Guardian, payload string, sequence uint64) *vaautils.VAA {
+type VAABody struct {
+	GuardianSetIndex uint32
+	Payload          []byte
+	Sequence         uint64
+	EmitterChain     vaautils.ChainID
+	EmitterAddress   vaautils.Address
+}
+
+func CreateVAA(t *testing.T, guardians []Guardian, vaaBody VAABody) *vaautils.VAA {
 	vaa := vaautils.VAA{
-		Payload:   []byte(payload),
-		Sequence:  sequence,
+		GuardianSetIndex: vaaBody.GuardianSetIndex,
+		Payload:          vaaBody.Payload,
+		Sequence:         vaaBody.Sequence,
+		EmitterChain:     vaaBody.EmitterChain,
+		EmitterAddress:   vaaBody.EmitterAddress,
+
 		Version:   vaautils.SupportedVAAVersion,
 		Timestamp: time.Now().Local().Truncate(time.Second),
 	}

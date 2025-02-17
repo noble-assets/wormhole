@@ -52,6 +52,7 @@ func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*typ
 	}
 
 	if vaa.EmitterChain != vaautils.ChainID(config.GovChain) || !bytes.Equal(vaa.EmitterAddress.Bytes(), config.GovAddress) {
+		// TODO: is this the error we want to return?
 		return nil, types.ErrNotGovernanceVAA
 	}
 	if vaa.GuardianSetIndex != config.GuardianSetIndex {

@@ -320,7 +320,14 @@ func TestExecutedVAA(t *testing.T) {
 	require.False(t, resp.Executed, "expected no vaa in executed")
 
 	// ARRANGE
-	vaa := utils.CreateVAA(t, []utils.Guardian{utils.GuardianSigner()}, "valid", 0)
+	vaaBody := utils.VAABody{
+		GuardianSetIndex: 0,
+		Payload:          []byte("valid"),
+		Sequence:         1,
+		EmitterChain:     0,
+		EmitterAddress:   [32]byte{},
+	}
+	vaa := utils.CreateVAA(t, []utils.Guardian{utils.GuardianSigner()}, vaaBody)
 	digest := vaa.SigningDigest().Bytes()
 	req = types.QueryExecutedVAA{InputType: "", Input: common.Bytes2Hex(digest)}
 

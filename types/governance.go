@@ -47,6 +47,21 @@ func (pkt *GovernancePacket) Parse(bz []byte) error {
 	return nil
 }
 
+func (pkt *GovernancePacket) Serialize() []byte {
+	buf := make([]byte, 35+len(pkt.Payload))
+
+	copy(buf[0:32], make([]byte, 32))
+	copy(buf[0:32], []byte(pkt.Module))
+
+	buf[32] = pkt.Action
+
+	binary.BigEndian.PutUint16(buf[33:35], pkt.Chain)
+
+	copy(buf[35:], pkt.Payload)
+
+	return buf
+}
+
 // GuardianSetUpdate represents the governance action to update the guardian set.
 type GuardianSetUpdate struct {
 	NewGuardianSetIndex uint32
