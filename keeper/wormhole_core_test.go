@@ -25,72 +25,37 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
 	"github.com/noble-assets/wormhole/types"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
 func TestHandleCoreGovernancePacket(t *testing.T) {
-	// ARRANGE: Create environment
+	// ARRANGE: Create environment.
 	ctx, k := mocks.WormholeKeeper(t)
-	packet := types.GovernancePacket{}
+	packet := types.GovernancePacket{
+		Action: uint8(vaautils.ActionGuardianSetUpdate) + 1, // action guardian set update is the only supported action
+	}
 
 	// ACT
 	err := k.HandleCoreGovernancePacket(ctx, packet)
 
 	// ASSERT
-	require.Error(t, err, "expected error when packet is empty")
+	require.Error(t, err, "expected error when governance action is not 2")
 	require.ErrorContains(t, err, "unsupported governance action", "expected a different error")
 
-	// ARRANGE
-	packet.Action = 3
-	packet.Module = "Core"
-
-	// ACT
-	err = k.HandleCoreGovernancePacket(ctx, packet)
-
-	// ASSERT
-	require.Error(t, err, "expected error when governance action is not 2")
-	require.ErrorIs(t, err, types.ErrUnsupportedGovernanceAction, "expected a different error")
-
 	// ARRANGE: The action is valid but the payload is empty.
-	packet.Action = 2
+	packet.Action = uint8(vaautils.ActionGuardianSetUpdate)
 
 	// ACT
 	err = k.HandleCoreGovernancePacket(ctx, packet)
 
 	// ASSERT
-	require.Error(t, err, "expected error when governance malformed payload")
+	require.Error(t, err, "expected error when the payload is malformed")
 	require.ErrorIs(t, err, types.ErrMalformedPayload, "expected a different error")
 
-	// ARRANGE: The action is valid but the payload is too short.
-	packet.Payload = []byte("shrt")
-
-	// ACT
-	err = k.HandleCoreGovernancePacket(ctx, packet)
-
-	// ASSERT
-	require.Error(t, err, "expected error when governance malformed payload")
-	require.ErrorIs(t, err, types.ErrMalformedPayload, "expected a different error")
-
-	// ARRANGE: Set an invalid payload to fail during parsing
-	// This payload is valid and will be used for all tests below.
-	packet.Payload = []byte{
-		0x00, 0x00, 0x00, 0x01, // index = 1
-		0x02, // length of 2
-		// First address (20 bytes)
-		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
-		0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14,
-	}
-
-	// ACT
-	err = k.HandleCoreGovernancePacket(ctx, packet)
-
-	// ASSERT
-	require.Error(t, err, "expected error when payload is malformed ")
-	require.ErrorIs(t, err, types.ErrMalformedPayload, "expected a different error")
-
-	// ARRANGE: Config is not set
+	// ARRANGE: The payload is valid but config is not set.
 	packet.Payload = []byte{
 		0x00, 0x00, 0x00, 0x01, // index = 1
 		0x02, // length of 2
@@ -106,12 +71,12 @@ func TestHandleCoreGovernancePacket(t *testing.T) {
 	err = k.HandleCoreGovernancePacket(ctx, packet)
 
 	// ASSERT
-	require.Error(t, err, "expected error when the config is not set")
+	require.Error(t, err, "expected error when the payload is valid but the config is not set")
 	require.ErrorContains(t, err, "failed to get config", "expected a different error")
 
-	// ARRANGE: Set the governance with an index that makes fail the payload
+	// ARRANGE: Set the config with a guardian set index different that makes the payload invalid
 	cfg := types.Config{
-		GuardianSetIndex: 1, // same index of the payload
+		GuardianSetIndex: 1, // same index of the payload (the valid should be payload - 1)
 	}
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
@@ -119,11 +84,11 @@ func TestHandleCoreGovernancePacket(t *testing.T) {
 	// ACT
 	err = k.HandleCoreGovernancePacket(ctx, packet)
 
-	// ASSERT: Set valid guardian index but don't populate the state with old guardian set.
+	// ASSERT
 	require.Error(t, err, "expected error when guardian set index is not valid")
 	require.ErrorContains(t, err, "invalid guardian set index", "expected a different error")
 
-	// ARRANGE
+	// ARRANGE: Set valid guardian set index but don't populate the state with old guardian set.
 	cfg.GuardianSetIndex = 0
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
@@ -132,10 +97,10 @@ func TestHandleCoreGovernancePacket(t *testing.T) {
 	err = k.HandleCoreGovernancePacket(ctx, packet)
 
 	// ASSERT
-	require.Error(t, err, "expected expected an error when no old guardian set is present")
+	require.Error(t, err, "expected an error when no old guardian set is present")
 	require.ErrorContains(t, err, "failed to get old guardian set", "expected a different error")
 
-	// ARRANGE: Set empty guardian state to the store
+	// ARRANGE: Set empty guardian state to the store.
 	err = k.GuardianSets.Set(ctx, 0, types.GuardianSet{})
 	require.NoError(t, err, "expected no error setting the old guardian set")
 
@@ -147,9 +112,9 @@ func TestHandleCoreGovernancePacket(t *testing.T) {
 
 	respCfg, err := k.Config.Get(ctx)
 	require.NoError(t, err, "expected no error reading the config")
-	require.Equal(t, uint32(1), respCfg.GuardianSetIndex, "expected a different guardian set index")
+	require.Equal(t, uint32(1), respCfg.GuardianSetIndex, "expected a different guardian set index after the update")
 
-	// Check old guardian set
+	// Check old guardian set.
 	respOldGuardianSet, err := k.GuardianSets.Get(ctx, 0)
 	require.NoError(t, err, "expected no error reading the old guardian set")
 	expTime := uint64(time.Now().Truncate(time.Second).Unix()) + types.GuardianSetExpiry

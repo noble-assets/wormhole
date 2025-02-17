@@ -35,29 +35,28 @@ import (
 )
 
 func TestParseAndVerifyVAA(t *testing.T) {
-	// ARRANGE: Create environment
+	// ARRANGE
 	ctx, k := mocks.WormholeKeeper(t)
 
-	// ACT
+	// ACT: Query with empty bytes as vaa.
 	_, err := k.ParseAndVerifyVAA(ctx, []byte{})
 
 	// ASSERT
-	require.Error(t, err, "expected an error")
+	require.Error(t, err, "expected an error when the vaa cannot be unmarshaled")
 	require.ErrorContains(t, err, "failed to unmarshal", "expected a different error")
 
-	// ARRANGE: Create a VAA already registered in the archive.
-	guardian := utils.GuardianSigner()
+	// ARRANGE: Create a VAA and register it in the archive simulating a previous execution.
+	guardian1 := utils.GuardianSigner()
 	vaaBody := utils.VAABody{
 		GuardianSetIndex: 0,
 		Payload:          []byte("first test vaa"),
 		Sequence:         1,
-		EmitterChain:     0,
-		EmitterAddress:   [32]byte{},
 	}
-	vaa1 := utils.CreateVAA(t, []utils.Guardian{guardian}, vaaBody)
+	vaa1 := utils.CreateVAA(t, []utils.Guardian{guardian1}, vaaBody)
 	hash1 := vaa1.SigningDigest().Bytes()
 	err = k.VAAArchive.Set(ctx, hash1, collections.Join(vaa1.MessageID(), true))
 	require.NoError(t, err, "expected no error setting the vaa in the archive")
+
 	bzVaa, err := vaa1.Marshal()
 	require.NoError(t, err, "expected no error marshaling the vaa")
 
@@ -65,10 +64,10 @@ func TestParseAndVerifyVAA(t *testing.T) {
 	_, err = k.ParseAndVerifyVAA(ctx, bzVaa)
 
 	// ASSERT
-	require.Error(t, err, "expected error when vaa is in the archive")
+	require.Error(t, err, "expected error when vaa is already in the archive")
 	require.ErrorIs(t, err, types.ErrAlreadyExecutedVAA, "expected a different error")
 
-	// ARRANGE: VAA is valid but the guardian set is not registered.
+	// ARRANGE: VAA is valid (not in the achive) but the guardian set is not registered.
 	err = k.VAAArchive.Remove(ctx, hash1)
 	require.NoError(t, err, "expected no error removing the vaa from archive")
 
@@ -80,18 +79,25 @@ func TestParseAndVerifyVAA(t *testing.T) {
 	require.ErrorContains(t, err, "failed to get guardian set", "expected a different error")
 
 	// ARRANGE: VAA is valid but the guardian set expired.
-	err = k.GuardianSets.Set(ctx, 0, types.GuardianSet{ExpirationTime: 1})
+	headerTime := uint64(sdk.UnwrapSDKContext(ctx).HeaderInfo().Time.Unix())
+	err = k.GuardianSets.Set(ctx, 0, types.GuardianSet{ExpirationTime: headerTime - 1})
 	require.NoError(t, err, "expected no error setting the guardian set")
 
 	// ACT
 	_, err = k.ParseAndVerifyVAA(ctx, bzVaa)
 
 	// ASSERT
-	require.Error(t, err, "expected error when guardian is expired")
+	require.Error(t, err, "expected error when guardian set is expired")
 	require.ErrorContains(t, err, "expired", "expected a different error")
 
-	// ARRANGE: VAA is valid but no addresses in the VAA for the guardian set.
-	guardianSet := types.GuardianSet{ExpirationTime: uint64(sdk.UnwrapSDKContext(ctx).HeaderInfo().Time.Unix())}
+	// ARRANGE: VAA is valid but the guardian set is different than the one who signed vaa. This
+	// makes signature verification failing.
+	guardianSet := types.GuardianSet{
+		Addresses: [][]byte{
+			utils.GuardianSigner().Address.Bytes(),
+		},
+		ExpirationTime: headerTime,
+	}
 	err = k.GuardianSets.Set(ctx, 0, guardianSet)
 	require.NoError(t, err, "expected no error setting the guardian set")
 
@@ -99,20 +105,7 @@ func TestParseAndVerifyVAA(t *testing.T) {
 	_, err = k.ParseAndVerifyVAA(ctx, bzVaa)
 
 	// ASSERT
-	require.Error(t, err, "expected error when the addresses are not valid")
-	require.ErrorContains(t, err, "failed to verify", "expected a different error")
-
-	// ARRANGE: VAA is valid but no addresses in the VAA for the guardian set.
-	invalidGuardian := utils.GuardianSigner()
-	guardianSet.Addresses = [][]byte{invalidGuardian.Address[:]}
-	err = k.GuardianSets.Set(ctx, 0, guardianSet)
-	require.NoError(t, err, "expected no error setting the guardian set")
-
-	// ACT
-	_, err = k.ParseAndVerifyVAA(ctx, bzVaa)
-
-	// ASSERT
-	require.Error(t, err, "expected error when the guardian is set is different than signing set")
+	require.Error(t, err, "expected error when the signing guardian set is not the correct one")
 	require.ErrorContains(t, err, "failed to verify", "expected a different error")
 
 	// ARRANGE: VAA is valid.
@@ -123,12 +116,17 @@ func TestParseAndVerifyVAA(t *testing.T) {
 		EmitterChain:     0,
 		EmitterAddress:   [32]byte{},
 	}
-	vaa2 := utils.CreateVAA(t, []utils.Guardian{guardian}, vaaBody)
+	guardian2 := utils.GuardianSigner()
+	vaa2 := utils.CreateVAA(t, []utils.Guardian{guardian1, guardian2}, vaaBody)
 	bzVaa2, err := vaa2.Marshal()
 	require.NoError(t, err, "expected no error marshaling the vaa")
+
 	guardianSet = types.GuardianSet{
 		ExpirationTime: 0,
-		Addresses:      [][]byte{guardian.Address[:]},
+		Addresses: [][]byte{
+			guardian1.Address[:],
+			guardian2.Address[:],
+		},
 	}
 	err = k.GuardianSets.Set(ctx, 0, guardianSet)
 	require.NoError(t, err, "expected no error setting the guardian set")
@@ -137,7 +135,7 @@ func TestParseAndVerifyVAA(t *testing.T) {
 	vaaResp, err := k.ParseAndVerifyVAA(ctx, bzVaa2)
 
 	// ASSERT
-	require.NoError(t, err, "expected no error when VAA is valid")
+	require.NoError(t, err, "expected no error when VAA is valid and signed by the current guardian set")
 	require.NoError(t, err, "expected no error retrieving an archived vaa")
 	require.Equal(t, vaa2.ConsistencyLevel, vaaResp.ConsistencyLevel, "expected a different ConsistencyLevel")
 	require.Equal(t, vaa2.EmitterAddress, vaaResp.EmitterAddress, "expected a different EmitterAddress")
@@ -147,8 +145,8 @@ func TestParseAndVerifyVAA(t *testing.T) {
 	require.Equal(t, vaa2.Payload, vaaResp.Payload, "expected a different Payload")
 	require.Equal(t, vaa2.Sequence, vaaResp.Sequence, "expected a different Sequence")
 	require.Equal(t, vaa2.Signatures, vaaResp.Signatures, "expected a different Signatures")
-	require.Equal(t, vaa2.Timestamp, vaaResp.Timestamp, "expected a different timestamp")
-	require.Equal(t, vaa2.Version, vaaResp.Version, "expected a different version")
+	require.Equal(t, vaa2.Timestamp, vaaResp.Timestamp, "expected a different Timestamp")
+	require.Equal(t, vaa2.Version, vaaResp.Version, "expected a different Version")
 }
 
 func TestBindPort(t *testing.T) {
@@ -159,20 +157,19 @@ func TestBindPort(t *testing.T) {
 	sk := mocks.ScopedKeeper{
 		Capabilities: make(map[string]*capabilitytypes.Capability),
 	}
-
 	ics4w := mocks.ICS4Wrapper{}
 
 	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
 
-	// ACT: No capabilities stored.
+	// ACT: Bind to port when no capability are stored.
 	err := k.BindPort(ctx)
 
 	// ASSERT
-	require.NoError(t, err)
+	require.NoError(t, err, "expected no error when the capability associated with the port does not exist")
 
 	c, found := sk.Capabilities[host.PortPath(types.Port)]
-	require.True(t, found, "expected the capability to be in the state")
-	require.Equal(t, &capabilitytypes.Capability{Index: uint64(3)}, c, "expected a different index for capability")
+	require.True(t, found, "expected the capability to be in the state after binding")
+	require.Equal(t, &capabilitytypes.Capability{Index: uint64(3)}, c, "expected a different index for capability") // 3 is hardcoded in the mock
 
 	// ACT
 	err = k.BindPort(ctx)
@@ -180,23 +177,24 @@ func TestBindPort(t *testing.T) {
 	// ASSERT
 	require.NoError(t, err, "expected no error when the capability is already registered")
 
-	// ARRANGE
+	// ARRANGE: Reset to initial conditions.
 	delete(sk.Capabilities, host.PortPath(types.Port))
-	// Setting the entry in the ports instruct the mock port to return a nil capability object
+	// Setting the entry in the ports instructs the mock port to return a nil capability object.
 	pk.Ports[types.Port] = true
 
 	// ACT
 	err = k.BindPort(ctx)
 
 	// ASSERT
-	require.Error(t, err, "expected an error when the capability is already registered")
+	require.Error(t, err, "expected when claim capability returns an error")
 	require.ErrorContains(t, err, "could not claim port capability", "expected a different error")
 }
 
 func TestClaimCapability(t *testing.T) {
 	// ARRANGE
-	sk := mocks.ScopedKeeper{Capabilities: make(map[string]*capabilitytypes.Capability)}
-
+	sk := mocks.ScopedKeeper{
+		Capabilities: make(map[string]*capabilitytypes.Capability),
+	}
 	pk := mocks.PortKeeper{}
 	ics4w := mocks.ICS4Wrapper{}
 
@@ -209,13 +207,14 @@ func TestClaimCapability(t *testing.T) {
 	// ASSERT
 	require.Error(t, err, "expected an error when the capability is nil")
 
-	// ARRANGE
+	// ARRANGE: Create a valid capability object.
 	capability := capabilitytypes.Capability{
 		Index: 3,
 	}
 
 	// ACT
 	err = k.ClaimCapability(ctx, &capability, "name")
+
 	c, found := sk.Capabilities["name"]
 	require.True(t, found, "expected the capability to be in the state")
 	require.Equal(t, &capability, c, "expected a different index for capability")
@@ -232,7 +231,6 @@ func TestPostMessage_Keeper(t *testing.T) {
 	sk := mocks.ScopedKeeper{
 		Capabilities: make(map[string]*capabilitytypes.Capability),
 	}
-
 	ics4w := mocks.ICS4Wrapper{}
 
 	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
@@ -241,36 +239,35 @@ func TestPostMessage_Keeper(t *testing.T) {
 	err := k.PostMessage(ctx, "", []byte{}, 0)
 
 	// ASSERT
-	require.Error(t, err)
+	require.Error(t, err, "expected an error when the wormchain channel is not set")
 	require.ErrorContains(t, err, "failed to get wormchain", "expected a different error")
 
-	// ARRANGE
+	// ARRANGE: Set the channel and cause an error with the packet data.
 	err = k.WormchainChannel.Set(ctx, "channel-0")
 	require.NoError(t, err, "expecting no error setting the wormhole channel")
 
 	// ACT
 	err = k.PostMessage(ctx, "", []byte{}, 0)
 
-	// ASSERT: Test handling of error from GetPakcetData
-	require.Error(t, err)
-	require.ErrorContains(t, err, "failed to get config")
+	// ASSERT
+	require.Error(t, err, "expected an error because config is not set")
+	require.ErrorContains(t, err, "failed to get packet data")
 
-	// ACT
-	err = k.PostMessage(ctx, "", []byte{}, 0)
-
-	// ASSERT: Test handling of error from GetPakcetData
-	require.Error(t, err, "expected an error when capability is nil and send packet is called")
-
-	// ARRANGE
-	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capabilitytypes.Capability{Index: uint64(3)}
-
-	cfg := types.Config{
-		ChainId: uint16(3),
-	}
+	// ARRANGE: Set the config but no capabilities. The GetCapability mock returns nil.
+	cfg := types.Config{ChainId: uint16(3)}
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
 
+	// ACT
 	signer := utils.TestAddress()
+	err = k.PostMessage(ctx, signer.Bech32, []byte{}, 0)
+
+	// ASSERT
+	require.Error(t, err, "expected an error when capability is nil and send packet is called")
+	require.ErrorContains(t, err, "failed to send packet")
+
+	// ARRANGE: Set a valid capability in the store.
+	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capabilitytypes.Capability{Index: uint64(3)}
 
 	// ACT
 	err = k.PostMessage(ctx, signer.Bech32, []byte("Hello from Noble"), 0)

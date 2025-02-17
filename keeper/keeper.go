@@ -141,11 +141,11 @@ func (k *Keeper) PostMessage(ctx context.Context, signer string, message []byte,
 
 	data, err := k.GetPacketData(ctx, message, nonce, signer)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get packet data")
 	}
 	bz, err := json.Marshal(data)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshad packed data")
 	}
 
 	capability, _ := k.scopedKeeper.GetCapability(sdkCtx, host.ChannelCapabilityPath(types.Port, channel))
@@ -156,7 +156,7 @@ func (k *Keeper) PostMessage(ctx context.Context, signer string, message []byte,
 		bz,
 	)
 
-	return err
+	return errors.Wrap(err, "failed to send packet")
 }
 
 func (k *Keeper) ParseAndVerifyVAA(ctx context.Context, bz []byte) (*vaautils.VAA, error) {

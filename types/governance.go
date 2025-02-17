@@ -71,6 +71,7 @@ type GuardianSetUpdate struct {
 	NewGuardianSet      GuardianSet
 }
 
+// Parse parse the payload into the GuardianSetUpdate type. The ExpirationTime is always set to 0.
 func (a *GuardianSetUpdate) Parse(payload []byte) error {
 	if len(payload) < 5 {
 		return ErrMalformedPayload

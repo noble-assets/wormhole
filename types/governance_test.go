@@ -69,7 +69,7 @@ func TestUpdateChannelChain_Parse(t *testing.T) {
 			"successful when payload is valid",
 			validPayload,
 			[]byte("channel-0"),
-			uint16(vaautils.ChainIDNoble),
+			uint16(vaautils.ChainIDWormchain),
 			"",
 		},
 	}
@@ -122,6 +122,20 @@ func TestGuardianSetUpdate_Parse(t *testing.T) {
 				0x00, 0x00, 0x00, 0x01, // index
 				0x02,                   // length of 2
 				0x01, 0x02, 0x03, 0x04, // incomplete address data
+			},
+			0,
+			0,
+			0,
+			"payload is malformed",
+		},
+		{
+			"fails when only one address is present and two are expected",
+			[]byte{
+				0x00, 0x00, 0x00, 0x01, // index = 1
+				0x02, // length of 2
+				// Only address (20 bytes)
+				0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a,
+				0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14,
 			},
 			0,
 			0,

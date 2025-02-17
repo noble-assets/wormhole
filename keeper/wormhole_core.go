@@ -36,8 +36,8 @@ func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.Gover
 	switch pkt.Action {
 	case uint8(vaautils.ActionGuardianSetUpdate):
 
-		var guardianSetUpgrade types.GuardianSetUpdate
-		err := guardianSetUpgrade.Parse(pkt.Payload)
+		var guardianSetUpdate types.GuardianSetUpdate
+		err := guardianSetUpdate.Parse(pkt.Payload)
 		if err != nil {
 			return err
 		}
@@ -48,8 +48,8 @@ func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.Gover
 		}
 
 		oldIndex := cfg.GuardianSetIndex
-		if guardianSetUpgrade.NewGuardianSetIndex != oldIndex+1 {
-			return fmt.Errorf("invalid guardian set index: expected %d, got %d", oldIndex+1, guardianSetUpgrade.NewGuardianSetIndex)
+		if guardianSetUpdate.NewGuardianSetIndex != oldIndex+1 {
+			return fmt.Errorf("invalid guardian set index: expected %d, got %d", oldIndex+1, guardianSetUpdate.NewGuardianSetIndex)
 		}
 
 		oldGuardianSet, err := k.GuardianSets.Get(ctx, oldIndex)
@@ -63,7 +63,7 @@ func (k *Keeper) HandleCoreGovernancePacket(ctx context.Context, pkt types.Gover
 		if err != nil {
 			return errors.Wrap(err, "failed to set old guardian set in state")
 		}
-		err = k.GuardianSets.Set(ctx, guardianSetUpgrade.NewGuardianSetIndex, guardianSetUpgrade.NewGuardianSet)
+		err = k.GuardianSets.Set(ctx, guardianSetUpdate.NewGuardianSetIndex, guardianSetUpdate.NewGuardianSet)
 		if err != nil {
 			return errors.Wrap(err, "failed to set new guardian set in state")
 		}

@@ -42,10 +42,10 @@ func TestPostMessage_MsgServer(t *testing.T) {
 	sk := mocks.ScopedKeeper{
 		Capabilities: make(map[string]*capabilitytypes.Capability),
 	}
-
 	ics4w := mocks.ICS4Wrapper{}
 
 	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
+
 	ms := keeper.NewMsgServer(k)
 
 	msg := types.MsgPostMessage{}
@@ -54,26 +54,23 @@ func TestPostMessage_MsgServer(t *testing.T) {
 	resp, err := ms.PostMessage(ctx, &msg)
 
 	// ASSERT
-	require.Error(t, err, "expected an error with an empty message")
+	require.Error(t, err, "expected an error the message has invalid values")
 	require.Equal(t, &types.MsgPostMessageResponse{}, resp)
 
-	// ARRANGE
+	// ARRANGE: Setting the values required to make the keeper method called under the hood working.
 	err = k.WormchainChannel.Set(ctx, "channel-0")
 	require.NoError(t, err, "expecting no error setting the wormhole channel")
 
-	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capabilitytypes.Capability{Index: uint64(3)}
+	capability := capabilitytypes.Capability{Index: uint64(3)}
+	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capability
 
-	cfg := types.Config{
-		ChainId: uint16(3),
-	}
+	cfg := types.Config{ChainId: uint16(3)}
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
 
-	signer := utils.TestAddress()
-
 	msg.Message = []byte("Hello from Noble")
 	msg.Nonce = 0
-	msg.Signer = signer.Bech32
+	msg.Signer = utils.TestAddress().Bech32
 
 	// ACT
 	resp, err = ms.PostMessage(ctx, &msg)
@@ -91,10 +88,10 @@ func TestSubmitVAA(t *testing.T) {
 	sk := mocks.ScopedKeeper{
 		Capabilities: make(map[string]*capabilitytypes.Capability),
 	}
-
 	ics4w := mocks.ICS4Wrapper{}
 
 	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
+
 	ms := keeper.NewMsgServer(k)
 
 	msg := types.MsgSubmitVAA{}
@@ -103,13 +100,14 @@ func TestSubmitVAA(t *testing.T) {
 	resp, err := ms.SubmitVAA(ctx, &msg)
 
 	// ASSERT
-	require.Error(t, err, "expected an error with an empty message during parsing")
-	require.ErrorContains(t, err, "failed to unmarshal")
+	require.Error(t, err, "expected an error with an invalid message during parsing")
+	require.ErrorContains(t, err, "failed during vaa parsing and verification")
 	require.Nil(t, resp, "expected nil response")
 
 	// ARRANGE: Set the test to pass the parse and verification of the VAA
 	signer := utils.TestAddress()
 	guardian := utils.GuardianSigner()
+
 	vaaBody := utils.VAABody{
 		GuardianSetIndex: 0,
 		Payload:          []byte("test vaa"),
@@ -121,16 +119,15 @@ func TestSubmitVAA(t *testing.T) {
 	bzVaa, err := vaa.Marshal()
 	require.NoError(t, err, "expected no error marshaling the vaa")
 
-	guardianSet := types.GuardianSet{
-		ExpirationTime: 0,
-		Addresses:      [][]byte{guardian.Address[:]},
-	}
-
-	err = k.GuardianSets.Set(ctx, 0, guardianSet)
-	require.NoError(t, err, "expected no error setting the guardian set")
-
 	msg.Vaa = bzVaa
 	msg.Signer = signer.Bech32
+
+	guardianSet := types.GuardianSet{
+		Addresses:      [][]byte{guardian.Address[:]},
+		ExpirationTime: 0,
+	}
+	err = k.GuardianSets.Set(ctx, 0, guardianSet)
+	require.NoError(t, err, "expected no error setting the guardian set")
 
 	// ACT
 	_, err = ms.SubmitVAA(ctx, &msg)
@@ -139,35 +136,27 @@ func TestSubmitVAA(t *testing.T) {
 	require.Error(t, err, "expected an error when the config is not set")
 	require.ErrorContains(t, err, "failed to get config from state")
 
-	// ARRANGE
-	cfg := types.Config{
-		ChainId: uint16(2),
-	}
+	// ARRANGE: Set a valid config and clean the archive from previous VAA.
+	cfg := types.Config{ChainId: uint16(2)}
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
 
 	hash := vaa.SigningDigest().Bytes()
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
-
-	// ACT
-	_, err = ms.SubmitVAA(ctx, &msg)
+	// ACT _, err = ms.SubmitVAA(ctx, &msg)
 
 	// ASSERT
 	require.Error(t, err, "expected an error when the config does not have a valid gov chain")
 	require.ErrorIs(t, err, types.ErrNotGovernanceVAA)
 
-	// ARRANGE: Set the same chain ID in the vaa body and the config.
+	// ARRANGE: Set a valid ChainID but not a valid emitter address.
 	vaaBody.EmitterChain = vaautils.ChainID(3)
 
 	vaa = utils.CreateVAA(t, []utils.Guardian{guardian}, vaaBody)
 	bzVaa, err = vaa.Marshal()
 	require.NoError(t, err, "expected no error marshaling the vaa")
 	msg.Vaa = bzVaa
-
-	cfg.GovChain = 3
-	err = k.Config.Set(ctx, cfg)
-	require.NoError(t, err, "expected no error setting the config")
 
 	// ACT
 	_, err = ms.SubmitVAA(ctx, &msg)
@@ -176,31 +165,32 @@ func TestSubmitVAA(t *testing.T) {
 	require.Error(t, err, "expected an error when emitter address is not gov address")
 	require.ErrorIs(t, err, types.ErrNotGovernanceVAA)
 
-	// ARRANGE
-	vaaBody.EmitterAddress = vaautils.Address([]byte("0000000000000000000000000address"))
+	// ARRANGE: Set a valid emitter address but different than the gov one.
+	cfg.GovAddress = []byte("address") // not padded with zero
+	cfg.GovChain = 3
+	err = k.Config.Set(ctx, cfg)
+	require.NoError(t, err, "expected no error setting the config")
 
+	vaaBody.EmitterAddress = vaautils.Address([]byte("0000000000000000000000000address"))
 	vaa = utils.CreateVAA(t, []utils.Guardian{guardian}, vaaBody)
 	bzVaa, err = vaa.Marshal()
 	require.NoError(t, err, "expected no error marshaling the vaa")
 	msg.Vaa = bzVaa
 
-	cfg.GovAddress = []byte("address") // not padded with zero
-	err = k.Config.Set(ctx, cfg)
-	require.NoError(t, err, "expected no error setting the config")
-
 	// ACT
 	_, err = ms.SubmitVAA(ctx, &msg)
 
 	// ASSERT
-	require.Error(t, err, "expected an error when emitter address is not valid")
+	require.Error(t, err, "expected an error when emitter address is not the gov address")
 	require.ErrorIs(t, err, types.ErrNotGovernanceVAA)
 
-	// ARRANGE: Set a guardian set different than the vaa
+	// ARRANGE: Set a guardian set index in the config different than the one in the VAA and
+	// clean the vaa archive.
 	hash = vaa.SigningDigest().Bytes()
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
 
-	cfg.GovAddress = []byte("0000000000000000000000000address") // not padded with zero
+	cfg.GovAddress = []byte("0000000000000000000000000address")
 	cfg.GuardianSetIndex = 99
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
@@ -212,8 +202,7 @@ func TestSubmitVAA(t *testing.T) {
 	require.Error(t, err, "expected an error when guardian set index is not the same")
 	require.ErrorContains(t, err, "must be signed by current guardian set")
 
-	// ARRANGE
-	hash = vaa.SigningDigest().Bytes()
+	// ARRANG: Reset the vaa archive and set the correct guardian set index.
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
 
@@ -226,10 +215,9 @@ func TestSubmitVAA(t *testing.T) {
 
 	// ASSERT
 	require.Error(t, err, "expected an error when the payload is not a valid governance packet")
-	require.ErrorContains(t, err, "governance packet is malformed")
+	require.ErrorContains(t, err, "failed parsing the vaa payload")
 
 	// ARRANGE
-	hash = vaa.SigningDigest().Bytes()
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
 
@@ -253,7 +241,7 @@ func TestSubmitVAA(t *testing.T) {
 	require.Error(t, err, "expected an error when the config chain id is not the same of vaa")
 	require.ErrorContains(t, err, "packet not meant for this chain")
 
-	// ARRANGE
+	// ARRANGE: Set the Chain id to zero to have the chain id check to always pass
 	hash = vaa.SigningDigest().Bytes()
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
@@ -280,7 +268,7 @@ func TestSubmitVAA(t *testing.T) {
 	require.ErrorContains(t, err, "unsupported governance action")
 	require.Equal(t, &types.MsgSubmitVAAResponse{}, resp, "expected a different response")
 
-	// ARRANGE
+	// ARRANGE: Trigger a failure in the execution of the core gov.
 	hash = vaa.SigningDigest().Bytes()
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
@@ -303,9 +291,10 @@ func TestSubmitVAA(t *testing.T) {
 
 	// ASSERT
 	require.Error(t, err, "expected an error in the core handler")
+	require.ErrorContains(t, err, "failed handling the core", "expected failing handling the core governance packet")
 	require.Equal(t, &types.MsgSubmitVAAResponse{}, resp, "expected a different response")
 
-	// ARRANGE
+	// ARRANGE: Trigger a failure in the execution of the ibc gov.
 	hash = vaa.SigningDigest().Bytes()
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
@@ -328,5 +317,6 @@ func TestSubmitVAA(t *testing.T) {
 
 	// ASSERT
 	require.Error(t, err, "expected an error in the ibc receiver handler")
+	require.ErrorContains(t, err, "failed handling the ibc", "expected failing handling the ibc receive governance packet")
 	require.Equal(t, &types.MsgSubmitVAAResponse{}, resp, "expected a different response")
 }

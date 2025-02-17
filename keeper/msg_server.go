@@ -43,7 +43,7 @@ func NewMsgServer(keeper *Keeper) types.MsgServer {
 func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*types.MsgSubmitVAAResponse, error) {
 	vaa, err := k.ParseAndVerifyVAA(ctx, msg.Vaa)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed during vaa parsing and verification")
 	}
 
 	config, err := k.Config.Get(ctx)
@@ -62,7 +62,7 @@ func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*typ
 	var pkt types.GovernancePacket
 	err = pkt.Parse(vaa.Payload)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed parsing the vaa payload")
 	}
 
 	if pkt.Chain != config.ChainId && pkt.Chain != 0 {
@@ -72,10 +72,10 @@ func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*typ
 	switch pkt.Module {
 	case "Core":
 		err = k.HandleCoreGovernancePacket(ctx, pkt)
-		return &types.MsgSubmitVAAResponse{}, err
+		return &types.MsgSubmitVAAResponse{}, errors.Wrap(err, "failed handling the core governance packet")
 	case "IbcReceiver":
 		err = k.HandleIBCReceiverGovernancePacket(ctx, pkt)
-		return &types.MsgSubmitVAAResponse{}, err
+		return &types.MsgSubmitVAAResponse{}, errors.Wrap(err, "failed handling the ibc receive governance packet")
 	default:
 		return &types.MsgSubmitVAAResponse{}, errors.Wrapf(types.ErrUnsupportedGovernanceAction, "module: %s, type: %d", pkt.Module, pkt.Action)
 	}

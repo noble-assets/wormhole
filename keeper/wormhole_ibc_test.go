@@ -37,44 +37,35 @@ import (
 )
 
 func TestHandleIBCReceiverGovernancePacket(t *testing.T) {
-	// ARRANGE: Set default variable and does not initialize the state.
+	// ARRANGE
 	ctx, k := mocks.WormholeKeeper(t)
-	packet := types.GovernancePacket{}
+	packet := types.GovernancePacket{
+		Action: uint8(vaautils.IbcReceiverActionUpdateChannelChain) + 1,
+	}
 
 	// ACT
 	err := k.HandleIBCReceiverGovernancePacket(ctx, packet)
 
 	// ASSERT
-	require.Error(t, err, "expected error when packet is empty")
+	require.Error(t, err, "expected error when governance action is not supported")
 	require.ErrorContains(t, err, "unsupported governance action", "expected a different error")
 
-	// ARRANGE
-	packet.Action = 3
-	packet.Module = "IbcReceiver"
-
-	// ACT
-	err = k.HandleIBCReceiverGovernancePacket(ctx, packet)
-
-	// ASSERT
-	require.Error(t, err, "expected error when governance action is not 1")
-	require.ErrorIs(t, err, types.ErrUnsupportedGovernanceAction, "expected a different error")
-
 	// ARRANGE: The action is valid but the payload is empty.
-	packet.Action = 1
+	packet.Action = uint8(vaautils.IbcReceiverActionUpdateChannelChain)
 
 	// ACT
 	err = k.HandleIBCReceiverGovernancePacket(ctx, packet)
 
 	// ASSERT
-	require.Error(t, err, "expected error when governance malformed payload")
+	require.Error(t, err, "expected error when the payload is malformed")
 	require.ErrorIs(t, err, types.ErrMalformedPayload, "expected a different error")
 
-	// ARRANGE: Chain ID is not wormchain
+	// ARRANGE: Set a Chain different than wormchain in payload.
 	channelBz, err := vaautils.LeftPadIbcChannelId("channel-0")
 	require.NoError(t, err)
 	// Shift left by eight for most significant byte and mask for less significant ones.
 	chainIDBz := []byte{
-		byte(uint16(vaautils.ChainIDOsmosis) >> 8),
+		byte(uint16(vaautils.ChainIDNoble) >> 8), // NobleChainId
 		byte(uint16(vaautils.ChainIDWormchain) & 0xFF),
 	}
 	invalidPayload := make([]byte, 66)
@@ -86,10 +77,10 @@ func TestHandleIBCReceiverGovernancePacket(t *testing.T) {
 	err = k.HandleIBCReceiverGovernancePacket(ctx, packet)
 
 	// ASSERT
-	require.Error(t, err, "expected error when governance malformed payload")
+	require.Error(t, err, "expected error when the chain in the payload is not valid")
 	require.ErrorIs(t, err, types.ErrInvalidChain, "expected a different error")
 
-	// ARRANGE: Chain ID is not wormchain
+	// ARRANGE
 	chainIDBz = []byte{
 		byte(uint16(vaautils.ChainIDWormchain) >> 8),
 		byte(uint16(vaautils.ChainIDWormchain) & 0xFF),
@@ -110,20 +101,24 @@ func TestHandleIBCReceiverGovernancePacket(t *testing.T) {
 }
 
 func TestGetPacketData(t *testing.T) {
-	// ARRANGE: Set default variable and does not initialize the state.
+	// ARRANGE
 	ctx, k := mocks.WormholeKeeper(t)
-	message := []byte{}
+
+	// Variables not relevant for the test.
+	message := []byte("Hello from Noble")
 	nonce := uint32(0)
 
 	// ACT
 	_, err := k.GetPacketData(ctx, message, nonce, "")
 
 	// ASSERT
-	require.Error(t, err, "expected an error")
+	require.Error(t, err, "expected an error when the config is not set")
 	require.ErrorContains(t, err, "failed to get config", "expected a different error")
 
-	// ARRANGE: Set empty config
-	cfg := types.Config{}
+	// ARRANGE: Set config.
+	cfg := types.Config{
+		ChainId: uint16(3),
+	}
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
 
@@ -131,10 +126,10 @@ func TestGetPacketData(t *testing.T) {
 	_, err = k.GetPacketData(ctx, message, nonce, "")
 
 	// ASSERT
-	require.Error(t, err, "expected an error when signer is not valid")
+	require.Error(t, err, "expected an error when signer is empty")
 	require.ErrorContains(t, err, "failed to decode signer", "expected a different error")
 
-	// ARRANGE: Create an invalid signer
+	// ARRANGE: Create a signer that makes fail the codec.
 	signer := utils.TestAddress()
 	invalidSigner := strings.Join([]string{"cosmos", strings.Split(signer.Bech32, "noble")[1]}, "")
 
@@ -145,15 +140,7 @@ func TestGetPacketData(t *testing.T) {
 	require.Error(t, err, "expected an error when the address is not valid for the codec")
 	require.ErrorContains(t, err, "failed to decode signer address", "expected a different error")
 
-	// ARRANGE: Add more information to the state to better test the valid case
-	cfg = types.Config{
-		ChainId: uint16(3),
-	}
-	err = k.Config.Set(ctx, cfg)
-	require.NoError(t, err, "expected no error setting the config")
-
-	// ACT: Call with valid signer now
-	message = []byte("Hello from Noble")
+	// ACT: Call with a valid signer now.
 	resp, err := k.GetPacketData(ctx, message, nonce, signer.Bech32)
 
 	// ASSERT
@@ -163,9 +150,9 @@ func TestGetPacketData(t *testing.T) {
 	copy(emitter[12:], signer.Bytes)
 	s, err := k.Sequences.Get(ctx, emitter)
 	require.NoError(t, err, "expected no error getting the updated sequence")
-	require.Equal(t, uint64(1), s, "expected 1 for a previously not existent key")
+	require.Equal(t, uint64(1), s, "expected 1 when is first sender packet")
 
-	require.Len(t, resp.Publish.Msg, 6, "expected a different number of messages")
+	require.Len(t, resp.Publish.Msg, 6, "expected a different number of messages in the packet")
 	require.Equal(t, hex.EncodeToString(message), resp.Publish.Msg[0].Value, "expected a different message")
 	require.Equal(t, hex.EncodeToString(emitter), resp.Publish.Msg[1].Value, "expected a different emitter")
 	require.Equal(t, "3", resp.Publish.Msg[2].Value, "expected a different chain ID")

@@ -53,11 +53,11 @@ func TestConfig(t *testing.T) {
 	resp, err = qs.Config(ctx, &req)
 
 	// ASSERT
-	require.Error(t, err, "expected error when the request is nil")
+	require.Error(t, err, "expected error when the config is not set")
 	require.ErrorContains(t, err, "unable to get config", "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
-	// ARRANGE
+	// ARRANGE: Set the config in the state.
 	cfg := types.Config{
 		ChainId:          1,
 		GuardianSetIndex: 2,
@@ -98,11 +98,11 @@ func TestWormchainChannel(t *testing.T) {
 	resp, err = qs.WormchainChannel(ctx, &req)
 
 	// ASSERT
-	require.Error(t, err)
+	require.Error(t, err, "expected an error when the wormchannel is not set")
 	require.ErrorContains(t, err, "wormchain channel not configured in state", "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
-	// ARRANGE
+	// ARRANGE: Set the wormchain channel in the state.
 	wormchainChannel := "channel-0"
 	err = k.WormchainChannel.Set(ctx, wormchainChannel)
 	require.NoError(t, err, "expected no error setting the wormchain channel")
@@ -136,9 +136,9 @@ func TestGuardianSets(t *testing.T) {
 
 	// ASSERT
 	require.NoError(t, err, "expected no error when no set is stored")
-	require.Equal(t, make(map[uint32]types.GuardianSet), resp.GuardianSets, "expected no sets")
+	require.Equal(t, make(map[uint32]types.GuardianSet), resp.GuardianSets, "expected no sets returned")
 
-	// ARRANGE
+	// ARRANGE: Add two sets in the state.
 	key1 := uint32(0)
 	set1 := types.GuardianSet{
 		Addresses: [][]byte{
@@ -148,7 +148,7 @@ func TestGuardianSets(t *testing.T) {
 		ExpirationTime: uint64(1),
 	}
 	err = k.GuardianSets.Set(ctx, key1, set1)
-	require.NoError(t, err, "expected no error setting the guardian set")
+	require.NoError(t, err, "expected no error setting the first guardian set")
 
 	key2 := uint32(1)
 	set2 := types.GuardianSet{
@@ -160,14 +160,14 @@ func TestGuardianSets(t *testing.T) {
 		ExpirationTime: uint64(3),
 	}
 	err = k.GuardianSets.Set(ctx, key2, set2)
-	require.NoError(t, err, "expected no error setting the guardian set")
+	require.NoError(t, err, "expected no error setting the second guardian set")
 
 	// ACT
 	resp, err = qs.GuardianSets(ctx, &req)
 
 	// ASSERT
-	require.NoError(t, err, "expected no error when the request is valid and the a guardian set is in the store")
-	require.Len(t, resp.GuardianSets, 2, "expected a different number of sets")
+	require.NoError(t, err)
+	require.Len(t, resp.GuardianSets, 2, "expected two sets")
 	require.Equal(t, set1, resp.GuardianSets[0], "expected a different first set")
 	require.Equal(t, set2, resp.GuardianSets[1], "expected a different second set")
 }
@@ -186,24 +186,13 @@ func TestGuardianSet(t *testing.T) {
 	require.Nil(t, resp, "expected nil response")
 
 	// ARRANGE
-	req := types.QueryGuardianSet{}
+	req := types.QueryGuardianSet{Index: "invalid"}
 
 	// ACT
 	resp, err = qs.GuardianSet(ctx, &req)
 
 	// ASSERT
-	require.Error(t, err, "expected error when the request is nil")
-	require.ErrorContains(t, err, "invalid guardian set index", "expected a different error")
-	require.Nil(t, resp, "expected nil response")
-
-	// ARRANGE
-	req = types.QueryGuardianSet{Index: "invalid"}
-
-	// ACT
-	resp, err = qs.GuardianSet(ctx, &req)
-
-	// ASSERT
-	require.Error(t, err, "expected error when the request index is invalid")
+	require.Error(t, err, "expected error when the index of the guardian set is not valid")
 	require.ErrorContains(t, err, "invalid guardian set index", "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
@@ -214,39 +203,26 @@ func TestGuardianSet(t *testing.T) {
 	resp, err = qs.GuardianSet(ctx, &req)
 
 	// ASSERT
-	require.Error(t, err, "expected error when the request is valid but config not set")
+	require.Error(t, err, "expected error when the index is valid but config not set")
 	require.ErrorContains(t, err, "unable to get config from state", "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
-	// ARRANGE
-	req = types.QueryGuardianSet{Index: "current"}
-
-	// ACT
+	// ACT: Set the config with a guardian set index.
 	cfg := types.Config{GuardianSetIndex: 33}
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
+
 	resp, err = qs.GuardianSet(ctx, &req)
 
 	// ASSERT
-	require.Error(t, err, "expected error when the guardian set is not stored")
+	require.Error(t, err, "expected error when the requested guardian set does not exists")
 	require.ErrorContains(t, err, "unable to get guardian set", "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
-	// ARRANGE
+	// ARRANGE: Set a guardian set in the state.
 	req = types.QueryGuardianSet{Index: "1"}
 
-	// ACT
-	resp, err = qs.GuardianSet(ctx, &req)
-
-	// ASSERT
-	require.Error(t, err, "expected error when the guardian set is not stored")
-	require.ErrorContains(t, err, "unable to get guardian set", "expected a different error")
-	require.Nil(t, resp, "expected nil response")
-
-	// ARRANGE
-	req = types.QueryGuardianSet{Index: "1"}
-
-	key := uint32(1)
+	key := uint32(1) // Same of the request
 	set := types.GuardianSet{
 		Addresses: [][]byte{
 			[]byte("address1"),
@@ -267,7 +243,7 @@ func TestGuardianSet(t *testing.T) {
 	// ARRANGE
 	req = types.QueryGuardianSet{Index: "current"}
 
-	key = uint32(33)
+	key = uint32(33) // the same value stored in the config
 	set = types.GuardianSet{
 		Addresses: [][]byte{
 			[]byte("address0"),
@@ -282,7 +258,7 @@ func TestGuardianSet(t *testing.T) {
 
 	// ASSERT
 	require.NoError(t, err, "expected no error when the guardian set associated with the current index exists")
-	require.Equal(t, set, resp.GuardianSet, "expected a different set")
+	require.Equal(t, set, resp.GuardianSet, "expected the set associated with the config index")
 }
 
 func TestExecutedVAA(t *testing.T) {
@@ -305,40 +281,26 @@ func TestExecutedVAA(t *testing.T) {
 	resp, err = qs.ExecutedVAA(ctx, &req)
 
 	// ASSERT
-	require.Error(t, err, "expected error when the input type is not allowed")
+	require.Error(t, err, "expected error when the input type is not supported")
 	require.ErrorContains(t, err, "invalid input type", "expected a different error")
 	require.Nil(t, resp, "expected nil response")
 
-	// ARRANGE
+	// ARRANGE: Set the default input type and use an empty string as vaa digest.
 	req = types.QueryExecutedVAA{InputType: ""}
 
 	// ACT
 	resp, err = qs.ExecutedVAA(ctx, &req)
 
 	// ASSERT
-	require.NoError(t, err, "expected no error when the input is not a valid digest")
+	require.NoError(t, err, "expected no error when the input is not in the store.")
 	require.False(t, resp.Executed, "expected no vaa in executed")
 
-	// ARRANGE
-	vaaBody := utils.VAABody{
-		GuardianSetIndex: 0,
-		Payload:          []byte("valid"),
-		Sequence:         1,
-		EmitterChain:     0,
-		EmitterAddress:   [32]byte{},
-	}
+	// ARRANGE: Set a VAA in the archive.
+	vaaBody := utils.VAABody{} // fields values are affecting the test only via vaa resulting id.
 	vaa := utils.CreateVAA(t, []utils.Guardian{utils.GuardianSigner()}, vaaBody)
 	digest := vaa.SigningDigest().Bytes()
 	req = types.QueryExecutedVAA{InputType: "", Input: common.Bytes2Hex(digest)}
 
-	// ACT
-	resp, err = qs.ExecutedVAA(ctx, &req)
-
-	// ASSERT
-	require.NoError(t, err, "expected no error when req is valid but archive is empty")
-	require.False(t, resp.Executed, "expected no vaa in executed")
-
-	// ARRANGE
 	err = k.VAAArchive.Set(ctx, digest, collections.Join(vaa.MessageID(), true))
 	require.NoError(t, err, "expected no error setting the vaa")
 
@@ -350,7 +312,7 @@ func TestExecutedVAA(t *testing.T) {
 	require.True(t, resp.Executed, "expected the vaa to be found via digest")
 
 	// ARRANGE
-	req = types.QueryExecutedVAA{InputType: "id", Input: "id"}
+	req = types.QueryExecutedVAA{InputType: "id", Input: ""}
 
 	// ACT
 	resp, err = qs.ExecutedVAA(ctx, &req)

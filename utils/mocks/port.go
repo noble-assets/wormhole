@@ -35,7 +35,6 @@ type PortKeeper struct {
 
 // BindPort implements types.PortKeeper.
 func (p PortKeeper) BindPort(ctx sdk.Context, port string) *capabilitytypes.Capability {
-	println("Calling bind port")
 	_, found := p.Ports[port]
 	if !found {
 		return &capabilitytypes.Capability{Index: uint64(3)}
