@@ -51,7 +51,12 @@ func WormholeKeeper(t testing.TB) (sdk.Context, *keeper.Keeper) {
 	return NewWormholeKeeper(t, ics4w, pk, sk)
 }
 
-func NewWormholeKeeper(t testing.TB, ics4Wrapper types.ICS4Wrapper, portKeeper types.PortKeeper, scopeKeeper types.ScopedKeeper) (sdk.Context, *keeper.Keeper) {
+func NewWormholeKeeper(
+	t testing.TB,
+	ics4Wrapper types.ICS4Wrapper,
+	portKeeper types.PortKeeper,
+	scopeKeeper types.ScopedKeeper,
+) (sdk.Context, *keeper.Keeper) {
 	key := storetypes.NewKVStoreKey(types.ModuleName)
 	tkey := storetypes.NewTransientStoreKey(fmt.Sprintf("transient_%s", types.ModuleName))
 	wrapper := testutil.DefaultContextWithDB(t, key, tkey)

@@ -25,6 +25,8 @@ import (
 
 	"cosmossdk.io/collections"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
 	"github.com/stretchr/testify/require"
 
 	"github.com/noble-assets/wormhole/types"
@@ -133,4 +135,130 @@ func TestParseAndVerifyVAA(t *testing.T) {
 	require.Equal(t, vaa2.Signatures, vaaResp.Signatures, "expected a different Signatures")
 	require.Equal(t, vaa2.Timestamp, vaaResp.Timestamp, "expected a different timestamp")
 	require.Equal(t, vaa2.Version, vaaResp.Version, "expected a different version")
+}
+
+func TestBindPort(t *testing.T) {
+	// ARRANGE
+	pk := mocks.PortKeeper{
+		Ports: make(map[string]bool),
+	}
+	sk := mocks.ScopedKeeper{
+		Capabilities: make(map[string]*capabilitytypes.Capability),
+	}
+
+	ics4w := mocks.ICS4Wrapper{}
+
+	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
+
+	// ACT: No capabilities stored.
+	err := k.BindPort(ctx)
+
+	// ASSERT
+	require.NoError(t, err)
+
+	c, found := sk.Capabilities[host.PortPath(types.Port)]
+	require.True(t, found, "expected the capability to be in the state")
+	require.Equal(t, &capabilitytypes.Capability{Index: uint64(3)}, c, "expected a different index for capability")
+
+	// ACT
+	err = k.BindPort(ctx)
+
+	// ASSERT
+	require.NoError(t, err, "expected no error when the capability is already registered")
+
+	// ARRANGE
+	delete(sk.Capabilities, host.PortPath(types.Port))
+	// Setting the entry in the ports instruct the mock port to return a nil capability object
+	pk.Ports[types.Port] = true
+
+	// ACT
+	err = k.BindPort(ctx)
+
+	// ASSERT
+	require.Error(t, err, "expected an error when the capability is already registered")
+	require.ErrorContains(t, err, "could not claim port capability", "expected a different error")
+}
+
+func TestClaimCapability(t *testing.T) {
+	// ARRANGE
+	sk := mocks.ScopedKeeper{Capabilities: make(map[string]*capabilitytypes.Capability)}
+
+	pk := mocks.PortKeeper{}
+	ics4w := mocks.ICS4Wrapper{}
+
+	// ARRANGE
+	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
+
+	// ACT
+	err := k.ClaimCapability(ctx, nil, "name")
+
+	// ASSERT
+	require.Error(t, err, "expected an error when the capability is nil")
+
+	// ARRANGE
+	capability := capabilitytypes.Capability{
+		Index: 3,
+	}
+
+	// ACT
+	err = k.ClaimCapability(ctx, &capability, "name")
+	c, found := sk.Capabilities["name"]
+	require.True(t, found, "expected the capability to be in the state")
+	require.Equal(t, &capability, c, "expected a different index for capability")
+
+	// ASSERT
+	require.NoError(t, err)
+}
+
+func TestPostMessageTest(t *testing.T) {
+	// ARRANGE
+	pk := mocks.PortKeeper{
+		Ports: make(map[string]bool),
+	}
+	sk := mocks.ScopedKeeper{
+		Capabilities: make(map[string]*capabilitytypes.Capability),
+	}
+
+	ics4w := mocks.ICS4Wrapper{}
+
+	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
+
+	// ACT
+	err := k.PostMessage(ctx, "", []byte{}, 0)
+
+	// ASSERT
+	require.Error(t, err)
+	require.ErrorContains(t, err, "failed to get wormchain", "expected a different error")
+
+	// ARRANGE
+	err = k.WormchainChannel.Set(ctx, "channel-0")
+	require.NoError(t, err, "expecting no error setting the wormhole channel")
+
+	// ACT
+	err = k.PostMessage(ctx, "", []byte{}, 0)
+
+	// ASSERT: Test handling of error from GetPakcetData
+	require.Error(t, err)
+	require.ErrorContains(t, err, "failed to get config")
+
+	// ACT
+	err = k.PostMessage(ctx, "", []byte{}, 0)
+
+	// ASSERT: Test handling of error from GetPakcetData
+	require.Error(t, err, "expected an error when capability is nil and send packet is called")
+
+	// ARRANGE
+	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capabilitytypes.Capability{Index: uint64(3)}
+	cfg := types.Config{
+		ChainId: uint16(3),
+	}
+	signer := utils.TestAddress()
+	err = k.Config.Set(ctx, cfg)
+	require.NoError(t, err, "expected no error setting the config")
+
+	// ACT
+	err = k.PostMessage(ctx, signer.Bech32, []byte("Hello from Noble"), 0)
+
+	// ASSERT
+	require.NoError(t, err)
 }

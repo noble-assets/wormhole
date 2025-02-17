@@ -29,9 +29,16 @@ import (
 
 var _ types.PortKeeper = PortKeeper{}
 
-type PortKeeper struct{}
+type PortKeeper struct {
+	Ports map[string]bool
+}
 
 // BindPort implements types.PortKeeper.
 func (p PortKeeper) BindPort(ctx sdk.Context, port string) *capabilitytypes.Capability {
-	panic("unimplemented")
+	println("Calling bind port")
+	_, found := p.Ports[port]
+	if !found {
+		return &capabilitytypes.Capability{Index: uint64(3)}
+	}
+	return nil
 }
