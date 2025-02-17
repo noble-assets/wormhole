@@ -51,7 +51,7 @@ func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*typ
 		return nil, errors.Wrap(err, "failed to get config from state")
 	}
 
-	if !(vaa.EmitterChain == vaautils.ChainID(config.GovChain) && bytes.Equal(vaa.EmitterAddress.Bytes(), config.GovAddress)) {
+	if vaa.EmitterChain != vaautils.ChainID(config.GovChain) || !bytes.Equal(vaa.EmitterAddress.Bytes(), config.GovAddress) {
 		return nil, types.ErrNotGovernanceVAA
 	}
 	if vaa.GuardianSetIndex != config.GuardianSetIndex {
@@ -64,7 +64,7 @@ func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*typ
 		return nil, err
 	}
 
-	if !(pkt.Chain == config.ChainId || pkt.Chain == 0) {
+	if pkt.Chain != config.ChainId && pkt.Chain != 0 {
 		return nil, errors.Wrap(types.ErrInvalidGovernanceVAA, "packet not meant for this chain")
 	}
 
