@@ -144,7 +144,9 @@ func TestSubmitVAA(t *testing.T) {
 	hash := vaa.SigningDigest().Bytes()
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
-	// ACT _, err = ms.SubmitVAA(ctx, &msg)
+
+	// ACT
+	_, err = ms.SubmitVAA(ctx, &msg)
 
 	// ASSERT
 	require.Error(t, err, "expected an error when the config does not have a valid gov chain")
