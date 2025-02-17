@@ -210,7 +210,7 @@ func TestClaimCapability(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func TestPostMessageTest(t *testing.T) {
+func TestPostMessage_Keeper(t *testing.T) {
 	// ARRANGE
 	pk := mocks.PortKeeper{
 		Ports: make(map[string]bool),
@@ -249,12 +249,14 @@ func TestPostMessageTest(t *testing.T) {
 
 	// ARRANGE
 	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capabilitytypes.Capability{Index: uint64(3)}
+
 	cfg := types.Config{
 		ChainId: uint16(3),
 	}
-	signer := utils.TestAddress()
 	err = k.Config.Set(ctx, cfg)
 	require.NoError(t, err, "expected no error setting the config")
+
+	signer := utils.TestAddress()
 
 	// ACT
 	err = k.PostMessage(ctx, signer.Bech32, []byte("Hello from Noble"), 0)
