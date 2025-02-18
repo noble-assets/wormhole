@@ -39,8 +39,7 @@ import (
 	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
 	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
 	// IBC Modules
-	capabilitykeeper "github.com/cosmos/ibc-go/modules/capability/keeper"
-	ibckeeper "github.com/cosmos/ibc-go/v8/modules/core/keeper"
+	ibckeeper "github.com/cosmos/ibc-go/v10/modules/core/keeper"
 	// Custom Modules
 	wormholekeeper "github.com/noble-assets/wormhole/keeper"
 )
@@ -73,8 +72,7 @@ type SimApp struct {
 	StakingKeeper   *stakingkeeper.Keeper
 	UpgradeKeeper   *upgradekeeper.Keeper
 	// IBC Modules
-	CapabilityKeeper *capabilitykeeper.Keeper
-	IBCKeeper        *ibckeeper.Keeper
+	IBCKeeper *ibckeeper.Keeper
 	// Custom Modules
 	WormholeKeeper *wormholekeeper.Keeper
 }
@@ -170,11 +168,6 @@ func (app *SimApp) SimulationManager() *module.SimulationManager {
 
 func (app *SimApp) GetKey(storeKey string) *storetypes.KVStoreKey {
 	key, _ := app.UnsafeFindStoreKey(storeKey).(*storetypes.KVStoreKey)
-	return key
-}
-
-func (app *SimApp) GetMemKey(memKey string) *storetypes.MemoryStoreKey {
-	key, _ := app.UnsafeFindStoreKey(memKey).(*storetypes.MemoryStoreKey)
 	return key
 }
 

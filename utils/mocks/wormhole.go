@@ -42,14 +42,10 @@ import (
 
 // WormholeKeeper returns an instance of the Keeper with all dependencies mocked.
 func WormholeKeeper(t testing.TB) (sdk.Context, *keeper.Keeper) {
-	ics4w := ICS4Wrapper{}
-	pk := PortKeeper{}
-	sk := ScopedKeeper{}
-
-	return NewWormholeKeeper(t, ics4w, pk, sk)
+	return NewWormholeKeeper(t, ICS4Wrapper{})
 }
 
-func NewWormholeKeeper(t testing.TB, ics4Wrapper types.ICS4Wrapper, portKeeper types.PortKeeper, scopeKeeper types.ScopedKeeper) (sdk.Context, *keeper.Keeper) {
+func NewWormholeKeeper(t testing.TB, ics4Wrapper types.ICS4Wrapper) (sdk.Context, *keeper.Keeper) {
 	key := storetypes.NewKVStoreKey(types.ModuleName)
 	tkey := storetypes.NewTransientStoreKey(fmt.Sprintf("transient_%s", types.ModuleName))
 	wrapper := testutil.DefaultContextWithDB(t, key, tkey)
@@ -64,8 +60,6 @@ func NewWormholeKeeper(t testing.TB, ics4Wrapper types.ICS4Wrapper, portKeeper t
 		runtime.ProvideEventService(),
 		addresscodec.NewBech32Codec("noble"),
 		ics4Wrapper,
-		portKeeper,
-		scopeKeeper,
 	)
 
 	return wrapper.Ctx, k

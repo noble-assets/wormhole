@@ -22,12 +22,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/tx"
 	txmodule "github.com/cosmos/cosmos-sdk/x/auth/tx/config"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/cosmos/ibc-go/modules/capability"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	ibc "github.com/cosmos/ibc-go/v8/modules/core"
-	"github.com/cosmos/ibc-go/v8/modules/core/exported"
-	solomachine "github.com/cosmos/ibc-go/v8/modules/light-clients/06-solomachine"
-	tendermint "github.com/cosmos/ibc-go/v8/modules/light-clients/07-tendermint"
+	ibc "github.com/cosmos/ibc-go/v10/modules/core"
+	"github.com/cosmos/ibc-go/v10/modules/core/exported"
+	solomachine "github.com/cosmos/ibc-go/v10/modules/light-clients/06-solomachine"
+	tendermint "github.com/cosmos/ibc-go/v10/modules/light-clients/07-tendermint"
 	"github.com/spf13/cobra"
 
 	"github.com/noble-assets/wormhole/simapp"
@@ -108,10 +106,9 @@ func NewRootCmd() *cobra.Command {
 	// manually register the modules on the client side.
 	// This needs to be removed after IBC supports App Wiring.
 	modules := map[string]appmodule.AppModule{
-		capabilitytypes.ModuleName: capability.AppModule{},
-		exported.ModuleName:        ibc.AppModule{},
-		tendermint.ModuleName:      tendermint.AppModule{},
-		solomachine.ModuleName:     solomachine.AppModule{},
+		exported.ModuleName:    ibc.AppModule{},
+		tendermint.ModuleName:  tendermint.AppModule{},
+		solomachine.ModuleName: solomachine.AppModule{},
 	}
 	for name, mod := range modules {
 		moduleBasicManager[name] = module.CoreAppModuleBasicAdaptor(name, mod)

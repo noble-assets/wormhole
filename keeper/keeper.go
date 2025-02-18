@@ -33,9 +33,7 @@ import (
 	"cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	"github.com/cosmos/ibc-go/v8/modules/core/24-host"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 
 	"github.com/noble-assets/wormhole/types"
 )
@@ -52,9 +50,7 @@ type Keeper struct {
 	Sequences        collections.Map[[]byte, uint64]
 	VAAArchive       *collections.IndexedMap[[]byte, collections.Pair[string, bool], VAAArchiveIndexes]
 
-	ics4Wrapper  types.ICS4Wrapper
-	portKeeper   types.PortKeeper
-	scopedKeeper types.ScopedKeeper
+	ics4Wrapper types.ICS4Wrapper
 }
 
 func NewKeeper(
@@ -64,8 +60,6 @@ func NewKeeper(
 	eventService event.Service,
 	addressCodec address.Codec,
 	ics4Wrapper types.ICS4Wrapper,
-	portKeeper types.PortKeeper,
-	scopedKeeper types.ScopedKeeper,
 ) *Keeper {
 	builder := collections.NewSchemaBuilder(storeService)
 
@@ -87,9 +81,7 @@ func NewKeeper(
 			NewVAAArchiveIndexes(builder),
 		),
 
-		ics4Wrapper:  ics4Wrapper,
-		portKeeper:   portKeeper,
-		scopedKeeper: scopedKeeper,
+		ics4Wrapper: ics4Wrapper,
 	}
 
 	schema, err := builder.Build()
@@ -101,30 +93,10 @@ func NewKeeper(
 	return keeper
 }
 
-// SetIBCKeepers overrides the provided IBC specific keepers for this module.
+// SetICS4Wrapper overrides the provided ICS4 wrapper for this module.
 // This exists because IBC doesn't support dependency injection.
-func (k *Keeper) SetIBCKeepers(ics4Wrapper types.ICS4Wrapper, portKeeper types.PortKeeper, scopedKeeper types.ScopedKeeper) {
+func (k *Keeper) SetICS4Wrapper(ics4Wrapper types.ICS4Wrapper) {
 	k.ics4Wrapper = ics4Wrapper
-	k.portKeeper = portKeeper
-	k.scopedKeeper = scopedKeeper
-}
-
-// BindPort allows the module to bind a specific port on initialization.
-func (k *Keeper) BindPort(ctx sdk.Context) error {
-	if _, ok := k.scopedKeeper.GetCapability(ctx, host.PortPath(types.Port)); !ok {
-		capability := k.portKeeper.BindPort(ctx, types.Port)
-		err := k.ClaimCapability(ctx, capability, host.PortPath(types.Port))
-		if err != nil {
-			return errors.Wrap(err, "could not claim port capability")
-		}
-	}
-
-	return nil
-}
-
-// ClaimCapability allows the module to claim port or channel capabilities.
-func (k *Keeper) ClaimCapability(ctx sdk.Context, cap *capabilitytypes.Capability, name string) error {
-	return k.scopedKeeper.ClaimCapability(ctx, cap, name)
 }
 
 // PostMessage allows the module to send messages from Noble via Wormhole.
@@ -145,9 +117,8 @@ func (k *Keeper) PostMessage(ctx context.Context, signer string, message []byte,
 		return err
 	}
 
-	capability, _ := k.scopedKeeper.GetCapability(sdkCtx, host.ChannelCapabilityPath(types.Port, channel))
 	_, err = k.ics4Wrapper.SendPacket(
-		sdkCtx, capability, types.Port, channel,
+		sdkCtx, types.Port, channel,
 		clienttypes.ZeroHeight(),
 		uint64(info.Time.Add(types.PacketLifetime).UnixNano()),
 		bz,

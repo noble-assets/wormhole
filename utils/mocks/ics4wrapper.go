@@ -22,8 +22,7 @@ package mocks
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	clienttypes "github.com/cosmos/ibc-go/v10/modules/core/02-client/types"
 
 	"github.com/noble-assets/wormhole/types"
 )
@@ -35,7 +34,6 @@ type ICS4Wrapper struct{}
 // SendPacket implements types.ICS4Wrapper.
 func (i ICS4Wrapper) SendPacket(
 	ctx sdk.Context,
-	chanCap *capabilitytypes.Capability,
 	sourcePort string,
 	sourceChannel string,
 	timeoutHeight clienttypes.Height,

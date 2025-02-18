@@ -230,8 +230,6 @@ func ProvideModule(in ModuleInputs) ModuleOutputs {
 		in.EventService,
 		in.AddressCodec,
 		nil,
-		nil,
-		nil,
 	)
 	m := NewAppModule(k, in.AddressCodec)
 

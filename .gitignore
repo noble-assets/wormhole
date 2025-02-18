@@ -3,3 +3,4 @@
 build
 e2e/relayer/config
 coverage.out
+go.work.sum

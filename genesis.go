@@ -69,10 +69,6 @@ func InitGenesis(ctx sdk.Context, k *keeper.Keeper, cdc address.Codec, genesis t
 			panic(err)
 		}
 	}
-
-	if err := k.BindPort(ctx); err != nil {
-		panic(err)
-	}
 }
 
 func ExportGenesis(ctx sdk.Context, k *keeper.Keeper) *types.GenesisState {
