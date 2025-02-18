@@ -296,15 +296,21 @@ func TestSubmitVAA(t *testing.T) {
 	require.ErrorContains(t, err, "failed handling the core", "expected failing handling the core governance packet")
 	require.Equal(t, &types.MsgSubmitVAAResponse{}, resp, "expected a different response")
 
-	// ARRANGE: Trigger a failure in the execution of the ibc gov.
+	// ARRANGE: Valid VAA submission via Core module
 	hash = vaa.SigningDigest().Bytes()
 	err = k.VAAArchive.Remove(ctx, hash)
 	require.NoError(t, err, "expected no error resetting vaa archive to empty")
 
+	payload := []byte{}
+	payload = append(payload, []byte{0x00, 0x00, 0x00, 0x01}...)
+	payload = append(payload, 0x01)
+	payload = append(payload, guardian.Address.Bytes()...)
+
 	packet = types.GovernancePacket{
-		Action: 3,
-		Module: "IbcReceiver",
-		Chain:  0,
+		Action:  uint8(vaautils.ActionGuardianSetUpdate),
+		Module:  "Core",
+		Chain:   0,
+		Payload: payload,
 	}
 	packetBz = packet.Serialize()
 
@@ -318,7 +324,71 @@ func TestSubmitVAA(t *testing.T) {
 	resp, err = ms.SubmitVAA(ctx, &msg)
 
 	// ASSERT
+	require.NoError(t, err, "expected no error in the core handler")
+	require.Equal(t, &types.MsgSubmitVAAResponse{}, resp, "expected a different response")
+
+	// ARRANGE: Trigger a failure in the execution of the ibc gov. Here we have to update the
+	// guardian set index to reflect previous vaa execution.
+	hash = vaa.SigningDigest().Bytes()
+	err = k.VAAArchive.Remove(ctx, hash)
+	require.NoError(t, err, "expected no error resetting vaa archive to empty")
+
+	packet = types.GovernancePacket{
+		Action: 3,
+		Module: "IbcReceiver",
+		Chain:  0,
+	}
+	packetBz = packet.Serialize()
+
+	vaaBody.Payload = packetBz
+	vaaBody.GuardianSetIndex = 1
+	vaa = utils.CreateVAA(t, []utils.Guardian{guardian}, vaaBody)
+	bzVaa, err = vaa.Marshal()
+	require.NoError(t, err, "expected no error marshaling the vaa")
+	msg.Vaa = bzVaa
+
+	// ACT
+	resp, err = ms.SubmitVAA(ctx, &msg)
+
+	// ASSERT
 	require.Error(t, err, "expected an error in the ibc receiver handler")
 	require.ErrorContains(t, err, "failed handling the ibc", "expected failing handling the ibc receive governance packet")
+	require.Equal(t, &types.MsgSubmitVAAResponse{}, resp, "expected a different response")
+
+	// ARRANGE: Valid VAA submission via IBC module
+	hash = vaa.SigningDigest().Bytes()
+	err = k.VAAArchive.Remove(ctx, hash)
+	require.NoError(t, err, "expected no error resetting vaa archive to empty")
+
+	channelBz, err := vaautils.LeftPadIbcChannelId("channel-0")
+	require.NoError(t, err)
+	chainIDBz := []byte{
+		byte(uint16(vaautils.ChainIDWormchain) >> 8),
+		byte(uint16(vaautils.ChainIDWormchain) & 0xFF),
+	}
+
+	payload = make([]byte, 66)
+	copy(payload[:64], channelBz[:])
+	copy(payload[64:], chainIDBz)
+
+	packet = types.GovernancePacket{
+		Action:  uint8(vaautils.IbcReceiverActionUpdateChannelChain),
+		Module:  "IbcReceiver",
+		Chain:   0,
+		Payload: payload,
+	}
+	packetBz = packet.Serialize()
+
+	vaaBody.Payload = packetBz
+	vaa = utils.CreateVAA(t, []utils.Guardian{guardian}, vaaBody)
+	bzVaa, err = vaa.Marshal()
+	require.NoError(t, err, "expected no error marshaling the vaa")
+	msg.Vaa = bzVaa
+
+	// ACT
+	resp, err = ms.SubmitVAA(ctx, &msg)
+
+	// ASSERT
+	require.NoError(t, err, "expected an error in the ibc receiver handler")
 	require.Equal(t, &types.MsgSubmitVAAResponse{}, resp, "expected a different response")
 }
