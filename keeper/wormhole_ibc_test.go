@@ -28,6 +28,8 @@ import (
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
 	"github.com/stretchr/testify/require"
 	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
@@ -95,9 +97,62 @@ func TestHandleIBCReceiverGovernancePacket(t *testing.T) {
 
 	// ASSERT
 	require.NoError(t, err, "expected no error when the payload is valid")
-	channel, err := k.WormchainChannel.Get(ctx)
+	channel, err := k.WormchainChannelId.Get(ctx)
 	require.NoError(t, err, "expected non error retrieving the channel")
 	require.Equal(t, "channel-0", channel, "expected a different channel")
+}
+
+func TestPostMessage_Keeper(t *testing.T) {
+	// ARRANGE
+	pk := mocks.PortKeeper{
+		Ports: make(map[string]bool),
+	}
+	sk := mocks.ScopedKeeper{
+		Capabilities: make(map[string]*capabilitytypes.Capability),
+	}
+	ics4w := mocks.ICS4Wrapper{}
+
+	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
+
+	// ACT
+	err := k.PostMessage(ctx, "", []byte{}, 0)
+
+	// ASSERT
+	require.Error(t, err, "expected an error when the wormchain channel is not set")
+	require.ErrorContains(t, err, "failed to get wormchain", "expected a different error")
+
+	// ARRANGE: Set the channel and cause an error with the packet data.
+	err = k.WormchainChannelId.Set(ctx, "channel-0")
+	require.NoError(t, err, "expecting no error setting the wormhole channel")
+
+	// ACT
+	err = k.PostMessage(ctx, "", []byte{}, 0)
+
+	// ASSERT
+	require.Error(t, err, "expected an error because config is not set")
+	require.ErrorContains(t, err, "failed to get packet data")
+
+	// ARRANGE: Set the config but no capabilities. The GetCapability mock returns nil.
+	cfg := types.Config{ChainId: uint16(3)}
+	err = k.Config.Set(ctx, cfg)
+	require.NoError(t, err, "expected no error setting the config")
+
+	// ACT
+	signer := utils.TestAddress()
+	err = k.PostMessage(ctx, signer.Bech32, []byte{}, 0)
+
+	// ASSERT
+	require.Error(t, err, "expected an error when capability is nil and send packet is called")
+	require.ErrorContains(t, err, "failed to send packet")
+
+	// ARRANGE: Set a valid capability in the store.
+	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capabilitytypes.Capability{Index: uint64(3)}
+
+	// ACT
+	err = k.PostMessage(ctx, signer.Bech32, []byte("Hello from Noble"), 0)
+
+	// ASSERT
+	require.NoError(t, err)
 }
 
 func TestGetPacketData(t *testing.T) {

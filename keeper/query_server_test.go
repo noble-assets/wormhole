@@ -104,7 +104,7 @@ func TestWormchainChannel(t *testing.T) {
 
 	// ARRANGE: Set the wormchain channel in the state.
 	wormchainChannel := "channel-0"
-	err = k.WormchainChannel.Set(ctx, wormchainChannel)
+	err = k.WormchainChannelId.Set(ctx, wormchainChannel)
 	require.NoError(t, err, "expected no error setting the wormchain channel")
 
 	// ACT

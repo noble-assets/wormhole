@@ -22,7 +22,6 @@ package keeper
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"cosmossdk.io/collections"
@@ -33,10 +32,6 @@ import (
 	"cosmossdk.io/core/store"
 	"cosmossdk.io/errors"
 	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
-	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
-	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
 	"github.com/ethereum/go-ethereum/common"
 	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
@@ -49,11 +44,11 @@ type Keeper struct {
 	eventService  event.Service
 	addressCodec  address.Codec
 
-	Config           collections.Item[types.Config]
-	WormchainChannel collections.Item[string]
-	GuardianSets     collections.Map[uint32, types.GuardianSet]
-	Sequences        collections.Map[[]byte, uint64]
-	VAAArchive       *collections.IndexedMap[[]byte, collections.Pair[string, bool], VAAArchiveIndexes]
+	Config             collections.Item[types.Config]
+	WormchainChannelId collections.Item[string]
+	GuardianSets       collections.Map[uint32, types.GuardianSet]
+	Sequences          collections.Map[[]byte, uint64]
+	VAAArchive         *collections.IndexedMap[[]byte, collections.Pair[string, bool], VAAArchiveIndexes]
 
 	ics4Wrapper  types.ICS4Wrapper
 	portKeeper   types.PortKeeper
@@ -77,10 +72,10 @@ func NewKeeper(
 		eventService:  eventService,
 		addressCodec:  addressCodec,
 
-		Config:           collections.NewItem(builder, types.ConfigKey, "config", codec.CollValue[types.Config](cdc)),
-		WormchainChannel: collections.NewItem(builder, types.WormchainChannelKey, "wormchain_channel", collections.StringValue),
-		GuardianSets:     collections.NewMap(builder, types.GuardianSetPrefix, "guardian_sets", collections.Uint32Key, codec.CollValue[types.GuardianSet](cdc)),
-		Sequences:        collections.NewMap(builder, types.SequencePrefix, "sequences", collections.BytesKey, collections.Uint64Value),
+		Config:             collections.NewItem(builder, types.ConfigKey, "config", codec.CollValue[types.Config](cdc)),
+		WormchainChannelId: collections.NewItem(builder, types.WormchainChannelKey, "wormchain_channel_id", collections.StringValue),
+		GuardianSets:       collections.NewMap(builder, types.GuardianSetPrefix, "guardian_sets", collections.Uint32Key, codec.CollValue[types.GuardianSet](cdc)),
+		Sequences:          collections.NewMap(builder, types.SequencePrefix, "sequences", collections.BytesKey, collections.Uint64Value),
 		VAAArchive: collections.NewIndexedMap(
 			builder, types.VAAArchivePrefix, "vaa_archive",
 			collections.BytesKey,
@@ -102,61 +97,6 @@ func NewKeeper(
 
 	keeper.schema = schema
 	return keeper
-}
-
-// SetIBCKeepers overrides the provided IBC specific keepers for this module.
-// This exists because IBC doesn't support dependency injection.
-func (k *Keeper) SetIBCKeepers(ics4Wrapper types.ICS4Wrapper, portKeeper types.PortKeeper, scopedKeeper types.ScopedKeeper) {
-	k.ics4Wrapper = ics4Wrapper
-	k.portKeeper = portKeeper
-	k.scopedKeeper = scopedKeeper
-}
-
-// BindPort allows the module to bind a specific port on initialization.
-func (k *Keeper) BindPort(ctx sdk.Context) error {
-	if _, ok := k.scopedKeeper.GetCapability(ctx, host.PortPath(types.Port)); !ok {
-		capability := k.portKeeper.BindPort(ctx, types.Port)
-		err := k.ClaimCapability(ctx, capability, host.PortPath(types.Port))
-		if err != nil {
-			return errors.Wrap(err, "could not claim port capability")
-		}
-	}
-
-	return nil
-}
-
-// ClaimCapability allows the module to claim port or channel capabilities.
-func (k *Keeper) ClaimCapability(ctx sdk.Context, cap *capabilitytypes.Capability, name string) error {
-	return k.scopedKeeper.ClaimCapability(ctx, cap, name)
-}
-
-// PostMessage allows the module to send messages from Noble via Wormhole.
-func (k *Keeper) PostMessage(ctx context.Context, signer string, message []byte, nonce uint32) error {
-	sdkCtx := sdk.UnwrapSDKContext(ctx)
-	info := k.headerService.GetHeaderInfo(ctx)
-	channel, err := k.WormchainChannel.Get(ctx)
-	if err != nil {
-		return errors.Wrap(err, "failed to get wormchain channel from state")
-	}
-
-	data, err := k.GetPacketData(ctx, message, nonce, signer)
-	if err != nil {
-		return errors.Wrap(err, "failed to get packet data")
-	}
-	bz, err := json.Marshal(data)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshad packed data")
-	}
-
-	capability, _ := k.scopedKeeper.GetCapability(sdkCtx, host.ChannelCapabilityPath(types.Port, channel))
-	_, err = k.ics4Wrapper.SendPacket(
-		sdkCtx, capability, types.Port, channel,
-		clienttypes.ZeroHeight(),
-		uint64(info.Time.Add(types.PacketLifetime).UnixNano()),
-		bz,
-	)
-
-	return errors.Wrap(err, "failed to send packet")
 }
 
 func (k *Keeper) ParseAndVerifyVAA(ctx context.Context, bz []byte) (*vaautils.VAA, error) {

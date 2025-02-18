@@ -34,52 +34,6 @@ import (
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
-func TestPostMessage_MsgServer(t *testing.T) {
-	// ARRANGE
-	pk := mocks.PortKeeper{
-		Ports: make(map[string]bool),
-	}
-	sk := mocks.ScopedKeeper{
-		Capabilities: make(map[string]*capabilitytypes.Capability),
-	}
-	ics4w := mocks.ICS4Wrapper{}
-
-	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
-
-	ms := keeper.NewMsgServer(k)
-
-	msg := types.MsgPostMessage{}
-
-	// ACT
-	resp, err := ms.PostMessage(ctx, &msg)
-
-	// ASSERT
-	require.Error(t, err, "expected an error the message has invalid values")
-	require.Equal(t, &types.MsgPostMessageResponse{}, resp)
-
-	// ARRANGE: Setting the values required to make the keeper method called under the hood working.
-	err = k.WormchainChannel.Set(ctx, "channel-0")
-	require.NoError(t, err, "expecting no error setting the wormhole channel")
-
-	capability := capabilitytypes.Capability{Index: uint64(3)}
-	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capability
-
-	cfg := types.Config{ChainId: uint16(3)}
-	err = k.Config.Set(ctx, cfg)
-	require.NoError(t, err, "expected no error setting the config")
-
-	msg.Message = []byte("Hello from Noble")
-	msg.Nonce = 0
-	msg.Signer = utils.TestAddress().Bech32
-
-	// ACT
-	resp, err = ms.PostMessage(ctx, &msg)
-
-	// ASSERT
-	require.NoError(t, err)
-	require.Equal(t, &types.MsgPostMessageResponse{}, resp)
-}
-
 func TestSubmitVAA(t *testing.T) {
 	// ARRANGE
 	pk := mocks.PortKeeper{
@@ -391,4 +345,50 @@ func TestSubmitVAA(t *testing.T) {
 	// ASSERT
 	require.NoError(t, err, "expected an error in the ibc receiver handler")
 	require.Equal(t, &types.MsgSubmitVAAResponse{}, resp, "expected a different response")
+}
+
+func TestPostMessage_MsgServer(t *testing.T) {
+	// ARRANGE
+	pk := mocks.PortKeeper{
+		Ports: make(map[string]bool),
+	}
+	sk := mocks.ScopedKeeper{
+		Capabilities: make(map[string]*capabilitytypes.Capability),
+	}
+	ics4w := mocks.ICS4Wrapper{}
+
+	ctx, k := mocks.NewWormholeKeeper(t, ics4w, pk, sk)
+
+	ms := keeper.NewMsgServer(k)
+
+	msg := types.MsgPostMessage{}
+
+	// ACT
+	resp, err := ms.PostMessage(ctx, &msg)
+
+	// ASSERT
+	require.Error(t, err, "expected an error the message has invalid values")
+	require.Equal(t, &types.MsgPostMessageResponse{}, resp)
+
+	// ARRANGE: Setting the values required to make the keeper method called under the hood working.
+	err = k.WormchainChannelId.Set(ctx, "channel-0")
+	require.NoError(t, err, "expecting no error setting the wormhole channel")
+
+	capability := capabilitytypes.Capability{Index: uint64(3)}
+	sk.Capabilities[host.ChannelCapabilityPath(types.Port, "channel-0")] = &capability
+
+	cfg := types.Config{ChainId: uint16(3)}
+	err = k.Config.Set(ctx, cfg)
+	require.NoError(t, err, "expected no error setting the config")
+
+	msg.Message = []byte("Hello from Noble")
+	msg.Nonce = 0
+	msg.Signer = utils.TestAddress().Bech32
+
+	// ACT
+	resp, err = ms.PostMessage(ctx, &msg)
+
+	// ASSERT
+	require.NoError(t, err)
+	require.Equal(t, &types.MsgPostMessageResponse{}, resp)
 }

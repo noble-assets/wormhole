@@ -43,7 +43,7 @@ func (k *Keeper) GetChain(ctx context.Context) (uint16, error) {
 }
 
 // GetGuardianSets is a helper function for retrieving all guardian sets from state.
-// NOTE: this function nver returns an error. Should we change signature?
+// NOTE: this function never returns an error. Should we change signature?
 func (k *Keeper) GetGuardianSets(ctx context.Context) (map[uint32]types.GuardianSet, error) {
 	guardianSets := make(map[uint32]types.GuardianSet)
 
@@ -57,7 +57,7 @@ func (k *Keeper) GetGuardianSets(ctx context.Context) (map[uint32]types.Guardian
 
 // GetSequences is a helper function for retrieving all sequence entries from
 // state. It encodes senders as Bech32 addresses for use in a genesis export.
-// NOTE: this function nver returns an error. Should we change signature?
+// NOTE: this function never returns an error. Should we change signature?
 func (k *Keeper) GetSequences(ctx context.Context) (map[string]uint64, error) {
 	sequences := make(map[string]uint64)
 
