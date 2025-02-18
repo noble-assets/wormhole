@@ -52,6 +52,9 @@ func TestAddress() Address {
 }
 
 func generateNobleAddress(bytes []byte) string {
-	address, _ := sdk.Bech32ifyAddressBytes("noble", bytes)
+	address, err := sdk.Bech32ifyAddressBytes("noble", bytes)
+	if err != nil {
+		panic("error during noble address creation")
+	}
 	return address
 }

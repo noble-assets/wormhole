@@ -79,18 +79,18 @@ func (a *GuardianSetUpdate) Parse(payload []byte) error {
 
 	newGuardianSetIndex := binary.BigEndian.Uint32(payload[0:4])
 
-	newGuardianSetLength := int(payload[4:5][0])
+	newGuardianSetLength := int(payload[4])
 
-	if len(payload[5:]) != AddressLenght*newGuardianSetLength {
+	if len(payload[5:]) != AddressLength*newGuardianSetLength {
 		return ErrMalformedPayload
 	}
 
 	// Offset is given by the 4 bytes of the new index + the single byte of the guardian set lenght.
 	offset := 5
 	addresses := make([][]byte, newGuardianSetLength)
-	for i := range newGuardianSetLength {
-		addresses[i] = payload[offset : offset+20]
-		offset += 20
+	for i := 0; i < newGuardianSetLength; i++ {
+		addresses[i] = payload[offset : offset+AddressLength]
+		offset += AddressLength
 	}
 
 	a.NewGuardianSetIndex = newGuardianSetIndex

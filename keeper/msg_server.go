@@ -72,10 +72,16 @@ func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*typ
 	switch pkt.Module {
 	case "Core":
 		err = k.HandleCoreGovernancePacket(ctx, pkt)
-		return &types.MsgSubmitVAAResponse{}, errors.Wrap(err, "failed handling the core governance packet")
+		if err != nil {
+			err = errors.Wrap(err, "failed handling the core governance packet")
+		}
+		return &types.MsgSubmitVAAResponse{}, err
 	case "IbcReceiver":
 		err = k.HandleIBCReceiverGovernancePacket(ctx, pkt)
-		return &types.MsgSubmitVAAResponse{}, errors.Wrap(err, "failed handling the ibc receive governance packet")
+		if err != nil {
+			err = errors.Wrap(err, "failed handling the ibc receive governance packet")
+		}
+		return &types.MsgSubmitVAAResponse{}, err
 	default:
 		return &types.MsgSubmitVAAResponse{}, errors.Wrapf(types.ErrUnsupportedGovernanceAction, "module: %s, type: %d", pkt.Module, pkt.Action)
 	}
