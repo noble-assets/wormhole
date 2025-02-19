@@ -65,13 +65,13 @@ In general, these packets take the following format:
 ```
 
 Once these packets have been relayed to Wormchain via IBC, the guardian set
-emits a VAA as soon as consensus is reached. The VAA are then posted into the
-receiving chain to trigger a state transition.
+emits a VAA as soon as consensus is reached. The VAA is then posted into the
+receiving chain to trigger the associated state transition.
 
-Packets are not defined directly in this module, but other Noble's modules can
-interact with the `x/wormhole` module to perform actions on other chains by
-using custom messages. Below is an example of how the Noble Dollar module uses
-the Womrhole module keeper to perform a native token transfer:
+`x/wormhole` does not directly defines packets, but allows other Noble's modules
+to interact with it to perform actions on other chains by using custom messages.
+Below is an example of how the Noble Dollar module uses the Womrhole module
+keeper to perform a native token transfer:
 
 ```go
 err = k.wormhole.PostMessage(
@@ -95,18 +95,20 @@ chain.
 
 This functionality can be used in two ways:
 
-- By other Noble modules, like the Noble Dollar, to verify a VAA before minting
-  tokens or distributing yield. This can be done by adding this module keeper as
-  a dependency of the module:
+1. By other Noble modules to perform actions after verifying the validity of a
+   VAA. The Noble Dollar for example verify a VAA before minting tokens or
+   distributing yield. This can be done by adding this module keeper as a
+   dependency of the module:
 
-  ```go
-  vaa, err := k.wormhole.ParseAndVerifyVAA(ctx, bz)
-  ```
+```go
+vaa, err := k.wormhole.ParseAndVerifyVAA(ctx, bz)
+```
 
-- To update information Noble chain has about the Wormchain. This can be done
-  via message server and requires the usasge of a custom relayer implementation,
-  called [Jester], which is run as a sidecar process by Noble's validators. The
-  standard for this kind of messages is defined by the `GovernancePacket`.
+2. To update information Noble chain has about the Wormchain. This can be done
+   via message server and requires the usasge of a custom relayer
+   implementation, called [Jester], which is run as a sidecar process by Noble's
+   validators. The standard for this kind of messages is defined by the
+   `GovernancePacket`.
 
 ### Governance Packets
 
