@@ -111,6 +111,12 @@ func (k *Keeper) GetPacketData(ctx context.Context, message []byte, nonce uint32
 		return nil, errors.Wrap(err, "failed to set sequence in state")
 	}
 
+	pkt := CreatePacket(message, emitter, config.ChainId, nonce, sequence, k.headerService.GetHeaderInfo(ctx).Time.Unix())
+
+	return pkt, nil
+}
+
+func CreatePacket(message, sender []byte, chainId uint16, nonce uint32, sequence uint64, timestamp int64) *types.PacketData {
 	return &types.PacketData{
 		Publish: struct {
 			Msg []struct {
@@ -128,12 +134,12 @@ func (k *Keeper) GetPacketData(ctx context.Context, message []byte, nonce uint32
 				Value string
 			}{
 				{"message.message", hex.EncodeToString(message)},
-				{"message.sender", hex.EncodeToString(emitter)},
-				{"message.chain_id", strconv.Itoa(int(config.ChainId))},
+				{"message.sender", hex.EncodeToString(sender)},
+				{"message.chain_id", strconv.Itoa(int(chainId))},
 				{"message.nonce", strconv.Itoa(int(nonce))},
 				{"message.sequence", strconv.Itoa(int(sequence))},
-				{"message.block_time", strconv.Itoa(int(k.headerService.GetHeaderInfo(ctx).Time.Unix()))},
+				{"message.block_time", strconv.Itoa(int(timestamp))},
 			},
 		}),
-	}, nil
+	}
 }

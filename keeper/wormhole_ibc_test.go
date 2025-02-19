@@ -22,6 +22,7 @@ package keeper_test
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"strconv"
 	"strings"
 	"testing"
@@ -33,6 +34,7 @@ import (
 	"github.com/stretchr/testify/require"
 	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
+	"github.com/noble-assets/wormhole/keeper"
 	"github.com/noble-assets/wormhole/types"
 	"github.com/noble-assets/wormhole/utils"
 	"github.com/noble-assets/wormhole/utils/mocks"
@@ -215,4 +217,53 @@ func TestGetPacketData(t *testing.T) {
 	require.Equal(t, "0", resp.Publish.Msg[4].Value, "expected a different sequence")
 	headerTime := sdk.UnwrapSDKContext(ctx).HeaderInfo().Time.Truncate(time.Second).Unix()
 	require.Equal(t, strconv.Itoa(int(headerTime)), resp.Publish.Msg[5].Value, "expected a different timestamp")
+}
+
+func TestCreatePacket(t *testing.T) {
+	// ARRANGE
+	message := []byte{}
+	sender := []byte{}
+	chainId := uint16(1)
+	nonce := uint32(0)
+	sequence := uint64(1)
+	timestamp := time.Now().Unix()
+
+	expectedJSON := `{
+  "publish": {
+    "msg": [
+      {
+        "key": "message.message",
+        "value": "` + hex.EncodeToString(message) + `"
+      },
+      {
+        "key": "message.sender",
+        "value": "` + hex.EncodeToString(sender) + `"
+      },
+      {
+        "key": "message.chain_id",
+        "value": "` + strconv.Itoa(int(chainId)) + `"
+      },
+      {
+        "key": "message.nonce",
+        "value": "` + strconv.Itoa(int(nonce)) + `"
+      },
+      {
+        "key": "message.sequence",
+        "value": "` + strconv.Itoa(int(sequence)) + `"
+      },
+      {
+        "key": "message.block_time",
+        "value": "` + strconv.Itoa(int(timestamp)) + `"
+      }
+    ]
+  }
+}`
+
+	// ACT
+	pkt := keeper.CreatePacket(message, sender, chainId, nonce, sequence, timestamp)
+	jsonData, err := json.MarshalIndent(pkt, "", "  ")
+
+	// ASSERT
+	require.NoError(t, err)
+	require.JSONEq(t, expectedJSON, string(jsonData))
 }
