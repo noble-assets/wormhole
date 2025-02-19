@@ -59,7 +59,7 @@ func (k queryServer) WormchainChannel(ctx context.Context, req *types.QueryWormc
 		return nil, types.ErrInvalidRequest
 	}
 
-	wormchainChannel, err := k.Keeper.WormchainChannel.Get(ctx)
+	wormchainChannel, err := k.Keeper.WormchainChannelId.Get(ctx)
 	if err != nil {
 		return nil, errors.New("wormchain channel not configured in state")
 	}

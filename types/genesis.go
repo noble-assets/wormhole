@@ -20,6 +20,7 @@
 
 package types
 
+// TODO: What to do?
 func DefaultGenesisState() *GenesisState {
 	return &GenesisState{}
 }
