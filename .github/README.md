@@ -31,32 +31,24 @@ illustrated in the diagram below:
 
 ![Noble and Wormchain communication paths](./noble-wormchain.png)
 
-- **Message pubblciation**: Noble can post messages to Wormchain, which are then
-  propagated through the Wormhole network. This communication path is used to
-  execute actions or trigger state changes into other chains supported by
-  Wormhole. Any standard IBC relayer listening for packets can transfer these
-  messages.
-
-- **VAA Processing**: Noble can receive and verify VAAs commited on Wormchain.
-  This communication path is used to update the Noble chain based on a state
-  change happened into another chain. For this step, we use a custom relayer
-  implementation called [Jester] which is run as a sidecar by Noble's
-  validators.
-
 These bidirectional communication paths enable secure cross-chain message
 passing and verification, forming the foundation of Noble's integration with the
-broader Wormhole ecosystem. Noble's modules can interact with the `x/wormhole`
-module to perform actions on other chains that does not implement the IBC
-protocol.
+Wormhole network.
 
-Noble and Wormchain communicates via a custom channel with version
-`ibc-wormhole-v1` and a port exposed by their
-[`wormchainIbcReceiver`][`wormchainIbcReceiver`] CosmWasm smart contract.
+## Message Pubblication
 
-Once opened, this channel allows a custom packet to be sent from Noble to
-Wormchain. This packet enable us to emit messages to Wormhole's guardian set,
-who are listening to these packets. In general, these packets take the following
-format:
+Noble can post messages to Wormchain via IBC, which are then propagated through
+the Wormhole network. This communication path is used to execute actions and
+trigger state changes into other chains supported by Wormhole.
+
+The two chains communicates via a custom channel with version `ibc-wormhole-v1`
+and a port exposed by their [`wormchainIbcReceiver`][`wormchainIbcReceiver`]
+CosmWasm smart contract. Once opened, this channel allows a custom packet to be
+sent from Noble to Wormchain and enable us to emit messages to Wormhole's
+guardian set. The channel is unidirectional and allows information only to flow
+from Noble to Wormchain.
+
+In general, these packets take the following format:
 
 ```json
 {
@@ -73,7 +65,48 @@ format:
 ```
 
 Once these packets have been relayed to Wormchain via IBC, the guardian set
-emits a VAA once consensus is reached.
+emits a VAA as soon as consensus is reached. The VAA are then posted into the
+receiving chain to trigger a state transition.
+
+Packets are not defined directly in this module, but other Noble's modules can
+interact with the `x/wormhole` module to perform actions on other chains by
+using custom messages. Below is an example of how the Noble Dollar module uses
+the Womrhole module keeper to perform a native token transfer:
+
+```go
+err = k.wormhole.PostMessage(
+  ctx,
+  transceiverAddress,
+  rawTransceiverMessage,
+  nonce,
+)
+```
+
+The module exposes also a server method to enable users to send custom defined
+messages throught the Wormhole protocol.
+
+Any standard IBC relayer listening for packets can transfer these messages.
+
+## VAA Processing
+
+Noble can receive and verify VAAs commited on Wormchain. This communication path
+is used to update the Noble chain based on a state change happened into another
+chain.
+
+This functionality can be used in two ways:
+
+- By other Noble modules, like the Noble Dollar, to verify a VAA before minting
+  tokens or distributing yield. This can be done by adding this module keeper as
+  a dependency of the module:
+
+  ```go
+  vaa, err := k.wormhole.ParseAndVerifyVAA(ctx, bz)
+  ```
+
+- To update information Noble chain has about the Wormchain. This can be done
+  via message server and requires the usasge of a custom relayer implementation,
+  called [Jester], which is run as a sidecar process by Noble's validators. The
+  standard for this kind of messages is defined by the `GovernancePacket`.
 
 ### Governance Packets
 
@@ -92,7 +125,10 @@ execute the following packets:
 | `Core`        | `GuardianSetUpgrade` |
 | `IbcReceiver` | `UpdateChannelChain` |
 
-[`wormholeIbc`]: https://github.com/wormhole-foundation/wormhole/tree/main/cosmwasm/contracts/wormhole-ibc
-[`wormchainIbcReceiver`]: https://github.com/wormhole-foundation/wormhole/tree/main/cosmwasm/contracts/wormchain-ibc-receiver
-[whitepaper]: https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0012_ibc_generic_messaging.md
+[`wormholeIbc`]:
+  https://github.com/wormhole-foundation/wormhole/tree/main/cosmwasm/contracts/wormhole-ibc
+[`wormchainIbcReceiver`]:
+  https://github.com/wormhole-foundation/wormhole/tree/main/cosmwasm/contracts/wormchain-ibc-receiver
+[whitepaper]:
+  https://github.com/wormhole-foundation/wormhole/blob/main/whitepapers/0012_ibc_generic_messaging.md
 [jester]: https://github.com/noble-assets/jester
