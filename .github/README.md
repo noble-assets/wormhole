@@ -1,5 +1,7 @@
 # `x/wormhole`
 
+![Architecture design](design.png)
+
 This repository contains a native Cosmos SDK module that enables Noble's
 connection to Wormhole.
 
@@ -17,8 +19,6 @@ The `x/wormhole` mdule serves three primary functions:
   Wormhole network to other chains.
 
 ## Architecture Overview
-
-![Architecture design](design.png)
 
 Noble connects with the Wormhole network via Wormchain, their purpose built
 Cosmos SDK blockchain. Wormchain implements a standardized protocol, as detailed
