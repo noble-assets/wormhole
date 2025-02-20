@@ -1,9 +1,3 @@
-# .prettierrc.toml
-trailingComma = "es5"
-tabWidth = 8
-semi = false
-singleQuote = true
-
 [[overrides]]
 files = "*.md"
 [overrides.options]
