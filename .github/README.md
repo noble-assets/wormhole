@@ -26,7 +26,7 @@ in the [whitepaper][whitepaper], which enables Cosmos zones to emit messages for
 verification without the need for the guardian set to support each zone
 directly.
 
-The communication between Noble and Womchain follows two primary paths, as
+The communication between Noble and Wormchain follows two primary paths, as
 illustrated in the diagram below:
 
 ![Noble and Wormchain communication paths](./noble-wormchain.png)
