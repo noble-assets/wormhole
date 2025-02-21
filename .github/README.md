@@ -29,8 +29,6 @@ directly.
 The communication between Noble and Wormchain follows two primary paths, as
 illustrated in the diagram below:
 
-![Noble and Wormchain communication paths](./noble-wormchain.png)
-
 These bidirectional communication paths enable secure cross-chain message
 passing and verification, forming the foundation of Noble's integration with the
 Wormhole network.
