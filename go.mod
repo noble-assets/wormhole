@@ -12,7 +12,7 @@ require (
 	github.com/cosmos/cosmos-proto v1.0.0-beta.5
 	github.com/cosmos/cosmos-sdk v0.50.10
 	github.com/cosmos/gogoproto v1.7.0
-	github.com/cosmos/ibc-go/v10 v10.0.0-beta.0
+	github.com/cosmos/ibc-go/v10 v10.0.0-rc.2
 	github.com/ethereum/go-ethereum v1.14.12
 	github.com/golang/protobuf v1.5.4
 	github.com/golangci/golangci-lint v1.61.0
@@ -22,7 +22,7 @@ require (
 	github.com/wormhole-foundation/wormhole/sdk v0.0.0-20241218143724-3797ed082150
 	google.golang.org/genproto/googleapis/api v0.0.0-20241015192408-796eee8c2d53
 	google.golang.org/grpc v1.69.0
-	google.golang.org/protobuf v1.35.2
+	google.golang.org/protobuf v1.36.5
 	mvdan.cc/gofumpt v0.7.0
 )
 
