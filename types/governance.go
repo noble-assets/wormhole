@@ -26,6 +26,8 @@ import (
 	"errors"
 )
 
+const AddressLength = 20
+
 // GovernancePacket defines the expected payload of a Governance VAA.
 type GovernancePacket struct {
 	Module  string
@@ -43,6 +45,77 @@ func (pkt *GovernancePacket) Parse(bz []byte) error {
 	pkt.Action = bz[32:33][0]
 	pkt.Chain = binary.BigEndian.Uint16(bz[33:35])
 	pkt.Payload = bz[35:]
+
+	return nil
+}
+
+func (pkt *GovernancePacket) Serialize() []byte {
+	buf := make([]byte, 35+len(pkt.Payload))
+
+	moduleBz := []byte(pkt.Module)
+	copy(buf[0:32], make([]byte, 32))
+	if len(moduleBz) < 32 {
+		copy(buf[32-len(moduleBz):], moduleBz) // Right-pad with 0x00
+	}
+
+	buf[32] = pkt.Action
+
+	binary.BigEndian.PutUint16(buf[33:35], pkt.Chain)
+
+	copy(buf[35:], pkt.Payload)
+
+	return buf
+}
+
+// GuardianSetUpdate represents the governance action to update the guardian set.
+type GuardianSetUpdate struct {
+	NewGuardianSetIndex uint32
+	NewGuardianSet      GuardianSet
+}
+
+// Parse parse the payload into the GuardianSetUpdate type. The ExpirationTime is always set to 0.
+func (a *GuardianSetUpdate) Parse(payload []byte) error {
+	if len(payload) < 5 {
+		return ErrMalformedPayload
+	}
+
+	newGuardianSetIndex := binary.BigEndian.Uint32(payload[0:4])
+
+	newGuardianSetLength := int(payload[4])
+
+	if len(payload[5:]) != AddressLength*newGuardianSetLength {
+		return ErrMalformedPayload
+	}
+
+	// Offset is given by the 4 bytes of the new index + the single byte of the guardian set lenght.
+	offset := 5
+	addresses := make([][]byte, newGuardianSetLength)
+	for i := 0; i < newGuardianSetLength; i++ {
+		addresses[i] = payload[offset : offset+AddressLength]
+		offset += AddressLength
+	}
+
+	a.NewGuardianSetIndex = newGuardianSetIndex
+	a.NewGuardianSet.Addresses = addresses
+	a.NewGuardianSet.ExpirationTime = 0
+
+	return nil
+}
+
+// UpdateChannelChain represents the governance action to update the IBC
+// channel associated with a chain.
+type UpdateChannelChain struct {
+	ChannelID []byte
+	Chain     uint16
+}
+
+func (a *UpdateChannelChain) Parse(payload []byte) error {
+	if len(payload) != 66 {
+		return ErrMalformedPayload
+	}
+
+	a.ChannelID = bytes.TrimLeft(payload[0:64], "\x00")
+	a.Chain = binary.BigEndian.Uint16(payload[64:66])
 
 	return nil
 }

@@ -23,7 +23,9 @@ package mocks
 import (
 	"fmt"
 	"testing"
+	"time"
 
+	"cosmossdk.io/core/header"
 	storetypes "cosmossdk.io/store/types"
 	"github.com/cosmos/cosmos-sdk/codec"
 	addresscodec "github.com/cosmos/cosmos-sdk/codec/address"
@@ -49,7 +51,12 @@ func WormholeKeeper(t testing.TB) (sdk.Context, *keeper.Keeper) {
 	return NewWormholeKeeper(t, ics4w, pk, sk)
 }
 
-func NewWormholeKeeper(t testing.TB, ics4Wrapper types.ICS4Wrapper, portKeeper types.PortKeeper, scopeKeeper types.ScopedKeeper) (sdk.Context, *keeper.Keeper) {
+func NewWormholeKeeper(
+	t testing.TB,
+	ics4Wrapper types.ICS4Wrapper,
+	portKeeper types.PortKeeper,
+	scopeKeeper types.ScopedKeeper,
+) (sdk.Context, *keeper.Keeper) {
 	key := storetypes.NewKVStoreKey(types.ModuleName)
 	tkey := storetypes.NewTransientStoreKey(fmt.Sprintf("transient_%s", types.ModuleName))
 	wrapper := testutil.DefaultContextWithDB(t, key, tkey)
@@ -68,7 +75,8 @@ func NewWormholeKeeper(t testing.TB, ics4Wrapper types.ICS4Wrapper, portKeeper t
 		scopeKeeper,
 	)
 
-	return wrapper.Ctx, k
+	ctx := wrapper.Ctx.WithHeaderInfo(header.Info{Time: time.Now().UTC()})
+	return ctx, k
 }
 
 // MakeTestEncodingConfig is a modified testutil.MakeTestEncodingConfig that

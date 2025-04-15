@@ -1832,7 +1832,7 @@ func (*MsgSubmitVAAResponse) Descriptor() ([]byte, []int) {
 	return file_wormhole_v1_tx_proto_rawDescGZIP(), []int{1}
 }
 
-// MsgPostMessage enabled anyone to submit messages to Wormhole.
+// MsgPostMessage enables anyone to submit messages to Wormhole.
 type MsgPostMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

@@ -31,8 +31,8 @@ import (
 	"github.com/noble-assets/wormhole/types"
 )
 
-// GetChain is a helper function for retrieving the local Wormhole Chain ID.
-func (k *Keeper) GetChain(ctx context.Context) (uint16, error) {
+// GetChainId is a helper function for retrieving the local Wormhole Chain ID.
+func (k *Keeper) GetChainId(ctx context.Context) (uint16, error) {
 	config, err := k.Config.Get(ctx)
 	if err != nil {
 		return 0, errors.New("unable to get config from state")

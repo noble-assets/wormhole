@@ -21,6 +21,8 @@
 package mocks
 
 import (
+	"errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
@@ -42,5 +44,8 @@ func (i ICS4Wrapper) SendPacket(
 	timeoutTimestamp uint64,
 	data []byte,
 ) (sequence uint64, err error) {
-	panic("unimplemented")
+	if chanCap == nil {
+		return 0, errors.New("empty capability")
+	}
+	return 1, nil
 }

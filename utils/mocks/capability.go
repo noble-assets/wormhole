@@ -21,6 +21,8 @@
 package mocks
 
 import (
+	"errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	capabilitytypes "github.com/cosmos/ibc-go/modules/capability/types"
 
@@ -29,14 +31,31 @@ import (
 
 var _ types.ScopedKeeper = ScopedKeeper{}
 
-type ScopedKeeper struct{}
-
-// ClaimCapability implements types.ScopedKeeper.
-func (s ScopedKeeper) ClaimCapability(ctx sdk.Context, cap *capabilitytypes.Capability, name string) error {
-	panic("unimplemented")
+type ScopedKeeper struct {
+	Capabilities map[string]*capabilitytypes.Capability
 }
 
-// GetCapability implements types.ScopedKeeper.
+// ClaimCapability implements types.ScopedKeeper.
+func (s ScopedKeeper) ClaimCapability(ctx sdk.Context, capability *capabilitytypes.Capability, name string) error {
+	if capability == nil {
+		return errors.New("empty capability")
+	}
+
+	if name == "" {
+		return errors.New("empty name")
+	}
+
+	s.Capabilities[name] = capability
+	return nil
+}
+
+// GetCapability implements types.ScopedKeeper
 func (s ScopedKeeper) GetCapability(ctx sdk.Context, name string) (*capabilitytypes.Capability, bool) {
-	panic("unimplemented")
+	capability, found := s.Capabilities[name]
+
+	if !found {
+		return nil, false
+	}
+
+	return capability, true
 }

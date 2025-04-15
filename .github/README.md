@@ -5,9 +5,10 @@
 This repository contains a native Cosmos SDK module that enables Noble's
 connection to Wormhole.
 
-The module represents a Go implementation of the [`wormholeIbc`][`wormholeIbc`]
-CosmWasm smart contract that is deployed on Cosmos zones connected with
-Wormchain like Neutron, Injective, and Sei.
+The module represents a Go implementation of the
+[`Wormhole IBC CosmWasm smart contract`][`wormholeIbc`] CosmWasm smart contract
+that is deployed on Cosmos zones connected with Wormchain like Neutron,
+Injective, and Sei.
 
 The `x/wormhole` module serves three primary functions:
 

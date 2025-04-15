@@ -107,7 +107,7 @@ func (m *MsgSubmitVAAResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_MsgSubmitVAAResponse proto.InternalMessageInfo
 
-// MsgPostMessage enabled anyone to submit messages to Wormhole.
+// MsgPostMessage enables anyone to submit messages to Wormhole.
 type MsgPostMessage struct {
 	Signer  string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	Message []byte `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`

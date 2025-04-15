@@ -22,6 +22,9 @@ package utils
 
 import (
 	"crypto/rand"
+
+	"github.com/cometbft/cometbft/crypto/secp256k1"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 func GenerateRandomBytes(n int) []byte {
@@ -31,4 +34,27 @@ func GenerateRandomBytes(n int) []byte {
 		panic(err)
 	}
 	return b
+}
+
+type Address struct {
+	Bytes  []byte
+	Bech32 string
+}
+
+func TestAddress() Address {
+	key := secp256k1.GenPrivKey()
+	bytes := key.PubKey().Address().Bytes()
+
+	return Address{
+		Bytes:  bytes,
+		Bech32: generateNobleAddress(bytes),
+	}
+}
+
+func generateNobleAddress(bytes []byte) string {
+	address, err := sdk.Bech32ifyAddressBytes("noble", bytes)
+	if err != nil {
+		panic("error during noble address creation")
+	}
+	return address
 }
