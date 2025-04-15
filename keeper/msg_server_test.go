@@ -55,7 +55,7 @@ func TestSubmitVAA(t *testing.T) {
 
 	// ASSERT
 	require.Error(t, err, "expected an error with an invalid message during parsing")
-	require.ErrorContains(t, err, "failed during vaa parsing and verification")
+	require.ErrorContains(t, err, "failed to parse and verify vaa")
 	require.Nil(t, resp, "expected nil response")
 
 	// ARRANGE: Set the test to pass the parse and verification of the VAA

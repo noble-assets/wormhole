@@ -2,9 +2,8 @@
 
 This repository contains a native Cosmos SDK module that enables Noble's
 connection to Wormhole. It is essentially a reimplementation of their
-[`wormholeIbc`](https://github.com/wormhole-foundation/wormhole/tree/main/cosmwasm/contracts/wormhole-ibc)
-CosmWasm smart contract that is already deployed on Cosmos zones like Neutron,
-Injective, and Sei.
+[`Wormhole IBC CosmWasm smart contract`](https://github.com/wormhole-foundation/wormhole/tree/main/cosmwasm/contracts/wormhole-ibc)
+that is already deployed on Cosmos zones like Neutron, Injective, and Sei.
 
 ## Architecture Overview
 

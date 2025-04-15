@@ -43,7 +43,7 @@ func NewMsgServer(keeper *Keeper) types.MsgServer {
 func (k msgServer) SubmitVAA(ctx context.Context, msg *types.MsgSubmitVAA) (*types.MsgSubmitVAAResponse, error) {
 	vaa, err := k.ParseAndVerifyVAA(ctx, msg.Vaa)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed during vaa parsing and verification")
+		return nil, errors.Wrap(err, "failed to parse and verify vaa")
 	}
 
 	config, err := k.Config.Get(ctx)

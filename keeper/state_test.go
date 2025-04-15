@@ -32,12 +32,12 @@ import (
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
 
-func TestGetChain(t *testing.T) {
+func TestGetChainId(t *testing.T) {
 	// ARRANGE: Create environment.
 	ctx, k := mocks.WormholeKeeper(t)
 
 	// ACT
-	_, err := k.GetChain(ctx)
+	_, err := k.GetChainId(ctx)
 
 	// ASSERT
 	require.Error(t, err, "expected error when config not set")
@@ -54,7 +54,7 @@ func TestGetChain(t *testing.T) {
 	require.NoError(t, err, "expected no error setting the config")
 
 	// ACT
-	chain, err := k.GetChain(ctx)
+	chain, err := k.GetChainId(ctx)
 
 	// ASSERT
 	require.NoError(t, err, "expected no error when config is set")

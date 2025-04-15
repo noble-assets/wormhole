@@ -27,6 +27,7 @@ import (
 	"github.com/stretchr/testify/require"
 	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
+	"github.com/noble-assets/wormhole/keeper"
 	"github.com/noble-assets/wormhole/types"
 	"github.com/noble-assets/wormhole/utils/mocks"
 )
@@ -117,7 +118,7 @@ func TestHandleCoreGovernancePacket(t *testing.T) {
 	// Check old guardian set.
 	respOldGuardianSet, err := k.GuardianSets.Get(ctx, 0)
 	require.NoError(t, err, "expected no error reading the old guardian set")
-	expTime := uint64(time.Now().Truncate(time.Second).Unix()) + types.GuardianSetExpiry
+	expTime := uint64(time.Now().Truncate(time.Second).Unix()) + keeper.GuardianSetExpiry
 	require.Equal(t, expTime, respOldGuardianSet.ExpirationTime, "expected a different timestamp for old guardian set")
 
 	// Check updated guardian set.
