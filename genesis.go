@@ -25,6 +25,7 @@ import (
 
 	"cosmossdk.io/collections"
 	"cosmossdk.io/core/address"
+	"cosmossdk.io/errors"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/noble-assets/wormhole/keeper"
@@ -33,16 +34,16 @@ import (
 
 func InitGenesis(ctx sdk.Context, k *keeper.Keeper, cdc address.Codec, genesis types.GenesisState) {
 	if err := k.Config.Set(ctx, genesis.Config); err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to set the config"))
 	}
 
-	if err := k.WormchainChannel.Set(ctx, genesis.WormchainChannel); err != nil {
-		panic(err)
+	if err := k.WormchainChannelId.Set(ctx, genesis.WormchainChannel); err != nil {
+		panic(errors.Wrap(err, "failed to set the wormchain channel id"))
 	}
 
 	for index, guardianSet := range genesis.GuardianSets {
 		if err := k.GuardianSets.Set(ctx, index, guardianSet); err != nil {
-			panic(err)
+			panic(errors.Wrap(err, "failed to set the guardian set"))
 		}
 	}
 
@@ -50,55 +51,55 @@ func InitGenesis(ctx sdk.Context, k *keeper.Keeper, cdc address.Codec, genesis t
 		sender := make([]byte, 32)
 		bz, err := cdc.StringToBytes(address)
 		if err != nil {
-			panic(err)
+			panic(errors.Wrap(err, "failed to convert the address to string"))
 		}
 		copy(sender[12:], bz)
 
 		if err := k.Sequences.Set(ctx, sender, sequence); err != nil {
-			panic(err)
+			panic(errors.Wrap(err, "failed to set the sequence"))
 		}
 	}
 
 	for hash, id := range genesis.VaaArchive {
 		bz, err := hex.DecodeString(hash)
 		if err != nil {
-			panic(err)
+			panic(errors.Wrap(err, "failed to deconde the vaa hash"))
 		}
 
 		if err := k.VAAArchive.Set(ctx, bz, collections.Join(id, true)); err != nil {
-			panic(err)
+			panic(errors.Wrap(err, "failed to set the vaa"))
 		}
 	}
 
 	if err := k.BindPort(ctx); err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to bind to the port"))
 	}
 }
 
 func ExportGenesis(ctx sdk.Context, k *keeper.Keeper) *types.GenesisState {
 	config, err := k.Config.Get(ctx)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to read the config"))
 	}
 
-	wormchainChannel, err := k.WormchainChannel.Get(ctx)
+	wormchainChannel, err := k.WormchainChannelId.Get(ctx)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to read the wormhole channel id"))
 	}
 
 	guardianSets, err := k.GetGuardianSets(ctx)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to read the guardian set"))
 	}
 
 	sequences, err := k.GetSequences(ctx)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to read sequences"))
 	}
 
 	vaaArchive, err := k.GetVAAArchive(ctx)
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to read the vaa archive"))
 	}
 
 	return &types.GenesisState{

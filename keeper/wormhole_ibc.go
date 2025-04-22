@@ -21,18 +21,77 @@
 package keeper
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"strconv"
 
 	"cosmossdk.io/core/event"
 	"cosmossdk.io/errors"
-	"github.com/wormhole-foundation/wormhole/sdk/vaa"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	clienttypes "github.com/cosmos/ibc-go/v8/modules/core/02-client/types"
+	host "github.com/cosmos/ibc-go/v8/modules/core/24-host"
+	vaautils "github.com/wormhole-foundation/wormhole/sdk/vaa"
 
 	"github.com/noble-assets/wormhole/types"
 )
+
+func (k *Keeper) HandleIBCReceiverGovernancePacket(ctx context.Context, pkt types.GovernancePacket) error {
+	switch pkt.Action {
+	case uint8(vaautils.IbcReceiverActionUpdateChannelChain):
+		var updateChannelChain types.UpdateChannelChain
+		err := updateChannelChain.Parse(pkt.Payload)
+		if err != nil {
+			return err
+		}
+
+		if updateChannelChain.Chain != uint16(vaautils.ChainIDWormchain) {
+			return types.ErrInvalidChain
+		}
+
+		if err := k.WormchainChannelId.Set(ctx, string(updateChannelChain.ChannelID)); err != nil {
+			return errors.Wrap(err, "failed to set wormchain channel in state")
+		}
+
+		return k.eventService.EventManager(ctx).EmitKV(ctx, "UpdateChannelChain",
+			event.Attribute{Key: "chain_id", Value: strconv.Itoa(int(updateChannelChain.Chain))},
+			event.Attribute{Key: "channel_id", Value: string(updateChannelChain.ChannelID)},
+		)
+	default:
+		return errors.Wrapf(types.ErrUnsupportedGovernanceAction, "module: %s, type: %d", pkt.Module, pkt.Action)
+	}
+}
+
+// PostMessage allows the module to send messages from Noble via Wormhole.
+func (k *Keeper) PostMessage(ctx context.Context, signer string, message []byte, nonce uint32) error {
+	sdkCtx := sdk.UnwrapSDKContext(ctx)
+	info := k.headerService.GetHeaderInfo(ctx)
+
+	channel, err := k.WormchainChannelId.Get(ctx)
+	if err != nil {
+		return errors.Wrap(err, "failed to get wormchain channel from state")
+	}
+
+	data, err := k.GetPacketData(ctx, message, nonce, signer)
+	if err != nil {
+		return errors.Wrap(err, "failed to get packet data")
+	}
+	bz, err := json.Marshal(data)
+	if err != nil {
+		return errors.Wrap(err, "failed to marshad packed data")
+	}
+
+	capability, _ := k.scopedKeeper.GetCapability(sdkCtx, host.ChannelCapabilityPath(types.Port, channel))
+
+	_, err = k.ics4Wrapper.SendPacket(
+		sdkCtx, capability, types.Port, channel,
+		clienttypes.ZeroHeight(),
+		uint64(info.Time.Add(types.PacketLifetime).UnixNano()),
+		bz,
+	)
+
+	return errors.Wrap(err, "failed to send packet")
+}
 
 func (k *Keeper) GetPacketData(ctx context.Context, message []byte, nonce uint32, signer string) (*types.PacketData, error) {
 	config, err := k.Config.Get(ctx)
@@ -40,19 +99,24 @@ func (k *Keeper) GetPacketData(ctx context.Context, message []byte, nonce uint32
 		return nil, errors.Wrap(err, "failed to get config from state")
 	}
 
-	emitter := make([]byte, 32)
 	bz, err := k.addressCodec.StringToBytes(signer)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to decode signer address")
 	}
+	emitter := make([]byte, 32)
 	copy(emitter[12:], bz)
 
 	sequence, _ := k.Sequences.Get(ctx, emitter)
-	err = k.Sequences.Set(ctx, emitter, sequence+1)
-	if err != nil {
+	if err := k.Sequences.Set(ctx, emitter, sequence+1); err != nil {
 		return nil, errors.Wrap(err, "failed to set sequence in state")
 	}
 
+	pkt := CreatePacket(message, emitter, config.ChainId, nonce, sequence, k.headerService.GetHeaderInfo(ctx).Time.Unix())
+
+	return pkt, nil
+}
+
+func CreatePacket(message, sender []byte, chainId uint16, nonce uint32, sequence uint64, timestamp int64) *types.PacketData {
 	return &types.PacketData{
 		Publish: struct {
 			Msg []struct {
@@ -69,58 +133,13 @@ func (k *Keeper) GetPacketData(ctx context.Context, message []byte, nonce uint32
 				Key   string
 				Value string
 			}{
-				{
-					Key:   "message.message",
-					Value: hex.EncodeToString(message),
-				},
-				{
-					Key:   "message.sender",
-					Value: hex.EncodeToString(emitter),
-				},
-				{
-					Key:   "message.chain_id",
-					Value: strconv.Itoa(int(config.ChainId)),
-				},
-				{
-					Key:   "message.nonce",
-					Value: strconv.Itoa(int(nonce)),
-				},
-				{
-					Key:   "message.sequence",
-					Value: strconv.Itoa(int(sequence)),
-				},
-				{
-					Key:   "message.block_time",
-					Value: strconv.Itoa(int(k.headerService.GetHeaderInfo(ctx).Time.Unix())),
-				},
+				{"message.message", hex.EncodeToString(message)},
+				{"message.sender", hex.EncodeToString(sender)},
+				{"message.chain_id", strconv.Itoa(int(chainId))},
+				{"message.nonce", strconv.Itoa(int(nonce))},
+				{"message.sequence", strconv.Itoa(int(sequence))},
+				{"message.block_time", strconv.Itoa(int(timestamp))},
 			},
 		}),
-	}, nil
-}
-
-func (k *Keeper) HandleIBCReceiverGovernancePacket(ctx context.Context, pkt types.GovernancePacket) error {
-	switch pkt.Action {
-	case 1:
-		if len(pkt.Payload) != 66 {
-			return types.ErrMalformedPayload
-		}
-
-		channel := string(bytes.TrimLeft(pkt.Payload[0:64], "\x00"))
-		chain := binary.BigEndian.Uint16(pkt.Payload[64:66])
-
-		if chain != uint16(vaa.ChainIDWormchain) {
-			return types.ErrInvalidChannel
-		}
-
-		if err := k.WormchainChannel.Set(ctx, channel); err != nil {
-			return errors.Wrap(err, "failed to set wormchain channel in state")
-		}
-
-		return k.eventService.EventManager(ctx).EmitKV(ctx, "UpdateChannelChain",
-			event.Attribute{Key: "chain_id", Value: strconv.Itoa(int(chain))},
-			event.Attribute{Key: "channel_id", Value: channel},
-		)
-	default:
-		return errors.Wrapf(types.ErrUnsupportedGovernanceAction, "module: %s, type: %d", pkt.Module, pkt.Action)
 	}
 }

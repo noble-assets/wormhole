@@ -34,5 +34,5 @@ var (
 
 	ErrInvalidPort    = errors.New(ModuleName, 101, "invalid port")
 	ErrInvalidVersion = errors.New(ModuleName, 102, "invalid version")
-	ErrInvalidChannel = errors.New(ModuleName, 103, "channel is not associated with wormchain")
+	ErrInvalidChain   = errors.New(ModuleName, 103, "chain id is not associated with wormchain")
 )

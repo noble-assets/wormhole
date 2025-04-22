@@ -31,7 +31,7 @@ message MsgSubmitVAA {
 // MsgSubmitVAAResponse is the response of the SubmitVAA action.
 message MsgSubmitVAAResponse {}
 
-// MsgPostMessage enabled anyone to submit messages to Wormhole.
+// MsgPostMessage enables anyone to submit messages to Wormhole.
 message MsgPostMessage {
   option (cosmos.msg.v1.signer) = "signer";
   option (amino.name) = "wormhole/PostMessage";
